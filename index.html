@@ -101,6 +101,21 @@
   }
   .fine-badge.on{opacity:1;}
 
+  /* ---------- Быстрые кнопки веса ---------- */
+  .quick-weights{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:6px; margin-top:12px;
+  }
+  .qw{
+    background:#0a0d12; border:1px solid var(--line);
+    border-radius:8px; padding:8px 4px; color:var(--txt);
+    font-size:12px; font-weight:600; cursor:pointer;
+    transition:border-color .12s, background .12s, transform .08s;
+  }
+  .qw:active{transform:scale(.94);}
+  .qw:hover{border-color:var(--accent);}
+  .qw.active{border-color:var(--accent); background:#1f6feb1a; color:var(--accent);}
+
   /* ---------- Выбор оружия ---------- */
   .weapons{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
   .weapon{
@@ -126,7 +141,7 @@
   .mode.active{border-color:var(--accent); background:#1f6feb1a; font-weight:600;}
 
   /* ---------- Ввод скорости ---------- */
-  .speed-row{display:flex; align-items:center; gap:12px;}
+  .speed-row{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
   .speed-input{
     flex:1; background:#0a0d12; border:1px solid var(--line);
     border-radius:12px; padding:14px; font-size:34px; font-weight:800;
@@ -138,6 +153,12 @@
   .speed-input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .speed-input:focus{border-color:var(--accent); box-shadow:0 0 0 3px #1f6feb33;}
   .speed-unit{font-size:15px; color:var(--dim); font-weight:600;}
+
+  .speed-fine-badge{
+    margin-top:8px; font-size:11px; color:var(--accent);
+    opacity:0; transition:opacity .15s; text-align:center; font-weight:600;
+  }
+  .speed-fine-badge.on{opacity:1;}
 
   /* ---------- Результат ---------- */
   .result{
@@ -153,7 +174,6 @@
   }
   .result .status{font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;}
   .result .big{font-size:40px; font-weight:800; margin:4px 0;}
-  .result .equiv{font-size:13px; color:var(--dim);}
   .result .note{font-size:12px; margin-top:8px; line-height:1.4;}
   .result.green{border-color:var(--green); background:#2ea04314;}
   .result.green .status{color:var(--green);}
@@ -161,6 +181,25 @@
   .result.yellow .status{color:var(--yellow);}
   .result.red{border-color:var(--red); background:#da363314;}
   .result.red .status{color:var(--red);}
+
+  /* ---------- Блок эквивалента и энергии ---------- */
+  .equiv-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .equiv-card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:14px; text-align:center;
+  }
+  .equiv-card .cap{
+    font-size:10px; text-transform:uppercase; letter-spacing:.7px;
+    color:var(--dim); font-weight:600; margin-bottom:6px;
+  }
+  .equiv-card .val{
+    font-size:26px; font-weight:800; transition:color .12s;
+  }
+  .equiv-card .unit{font-size:12px; color:var(--dim); margin-left:2px;}
+  .equiv-card .sub{font-size:11px; color:var(--dim); margin-top:4px;}
+  .equiv-card.hl .val{color:var(--accent);}
 
   /* ---------- Футер ---------- */
   footer{
@@ -227,6 +266,7 @@
 
   @media (max-width:380px){
     .weapons{grid-template-columns:1fr;}
+    .equiv-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -259,9 +299,16 @@
     <div class="slider-thumb" id="thumb"></div>
   </div>
   <div class="slider-marks">
-    <span>0.20</span><span>0.30</span><span>0.43</span>
+    <span>0.12</span><span>0.20</span><span>0.30</span><span>0.40</span><span>0.50</span>
   </div>
   <div class="fine-badge" id="fineBadge">Точный выбор</div>
+
+  <div class="quick-weights" id="quickWeights">
+    <button class="qw" data-w="0.25">0,25</button>
+    <button class="qw" data-w="0.28">0,28</button>
+    <button class="qw" data-w="0.30">0,30</button>
+    <button class="qw" data-w="0.32">0,32</button>
+  </div>
 </section>
 
 <!-- Тип оружия -->
@@ -293,15 +340,33 @@
     <input class="speed-input" id="speed" type="number" inputmode="decimal" placeholder="0" min="0" max="250" step="0.1">
     <div class="speed-unit">м/с</div>
   </div>
+  <div class="slider-track" id="speedTrack">
+    <div class="slider-fill" id="speedFill"></div>
+    <div class="slider-thumb" id="speedThumb"></div>
+  </div>
+  <div class="speed-fine-badge" id="speedFineBadge">Точный выбор · шаг 0.1 м/с</div>
 </section>
 
 <!-- Результат -->
 <section class="result" id="result">
   <div class="status" id="status">Введите скорость</div>
   <div class="big" id="big">— м/с</div>
-  <div class="equiv" id="equiv"></div>
   <div class="note" id="note"></div>
 </section>
+
+<!-- Эквивалент и энергия -->
+<div class="equiv-grid">
+  <div class="equiv-card hl" id="eqCard">
+    <div class="cap">Эквивалент на 0,20 г</div>
+    <div class="val"><span id="eqVal">—</span><span class="unit">м/с</span></div>
+    <div class="sub" id="eqSub">—</div>
+  </div>
+  <div class="equiv-card" id="energyCard">
+    <div class="cap">Мощность выстрела</div>
+    <div class="val"><span id="energyVal">—</span><span class="unit">Дж</span></div>
+    <div class="sub" id="energySub">—</div>
+  </div>
+</div>
 
 <footer>
   Приложение принадлежит <b>СК «Скорпион»</b><br>
@@ -420,7 +485,7 @@ const CQB_EQ_LIMIT = 120;          // п.11.6: эквивалент 120 м/с п
 const CQB_EQ_WEIGHT = 0.20;
 
 /* ================= СЛАЙДЕР ВЕСА ================= */
-const MIN_W = 0.20, MAX_W = 0.43;
+const MIN_W = 0.12, MAX_W = 0.50;
 const STEP  = 0.01;
 
 const track = document.getElementById('track');
@@ -443,7 +508,11 @@ function renderWeight(){
   fill.style.width = p + '%';
   thumb.style.left = p + '%';
   weightOut.textContent = weight.toFixed(2);
-  updateResult();
+  // подсветка быстрых кнопок
+  document.querySelectorAll('.qw').forEach(b=>{
+    b.classList.toggle('active', Math.abs(parseFloat(b.dataset.w) - weight) < 0.005);
+  });
+  updateAll();
 }
 
 function vibrate(){
@@ -508,6 +577,84 @@ track.addEventListener('pointerup', ()=>{
   lastTap = now;
 });
 
+/* быстрые кнопки веса */
+document.getElementById('quickWeights').addEventListener('click', e=>{
+  const btn = e.target.closest('.qw');
+  if(!btn) return;
+  weight = parseFloat(btn.dataset.w);
+  renderWeight();
+  if(navigator.vibrate) navigator.vibrate(8);
+});
+
+/* ================= СЛАЙДЕР СКОРОСТИ ================= */
+const SPEED_MIN = 0, SPEED_MAX = 200, SPEED_STEP = 0.1;
+const speedTrack = document.getElementById('speedTrack');
+const speedFill  = document.getElementById('speedFill');
+const speedThumb = document.getElementById('speedThumb');
+const speedInput = document.getElementById('speed');
+const speedFineBadge = document.getElementById('speedFineBadge');
+
+let speedDragging = false;
+let sLastX = 0, sLastT = 0;
+
+function speedToPct(v){ return ((v - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100; }
+
+function renderSpeedSlider(v){
+  const p = Math.min(Math.max(speedToPct(v), 0), 100);
+  speedFill.style.width = p + '%';
+  speedThumb.style.left = p + '%';
+}
+
+function setSpeedFromEvent(e){
+  const rect = speedTrack.getBoundingClientRect();
+  const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+  const raw = SPEED_MIN + (x / rect.width) * (SPEED_MAX - SPEED_MIN);
+
+  const now = performance.now();
+  const dt = Math.max(now - sLastT, 1);
+  const dx = Math.abs(e.clientX - sLastX);
+  const pxPerMs = dx / dt;
+  sLastX = e.clientX; sLastT = now;
+
+  // замедление → шаг 0.1, иначе 1.0
+  const fine = pxPerMs < 0.10;
+  speedFineBadge.classList.toggle('on', fine);
+  speedThumb.classList.toggle('active', true);
+
+  const step = fine ? 0.1 : 1;
+  let v = Math.round(raw / step) * step;
+  v = Math.min(Math.max(v, SPEED_MIN), SPEED_MAX);
+  v = Math.round(v * 10) / 10;
+
+  if(parseFloat(speedInput.value) !== v){
+    speedInput.value = v;
+    vibrate();
+    updateAll();
+  }
+  renderSpeedSlider(v);
+}
+
+speedTrack.addEventListener('pointerdown', e=>{
+  speedDragging = true;
+  speedTrack.setPointerCapture(e.pointerId);
+  sLastX = e.clientX; sLastT = performance.now();
+  setSpeedFromEvent(e);
+});
+speedTrack.addEventListener('pointermove', e=>{ if(speedDragging) setSpeedFromEvent(e); });
+function endSpeedDrag(){
+  speedDragging = false;
+  speedThumb.classList.remove('active');
+  speedFineBadge.classList.remove('on');
+}
+speedTrack.addEventListener('pointerup', endSpeedDrag);
+speedTrack.addEventListener('pointercancel', endSpeedDrag);
+
+speedInput.addEventListener('input', ()=>{
+  const v = parseFloat(speedInput.value);
+  if(!isNaN(v)) renderSpeedSlider(v);
+  updateAll();
+});
+
 /* ================= ВЫБОР ОРУЖИЯ ================= */
 let weaponLimit = 75;
 let weaponName  = 'Пистолет / револьвер';
@@ -519,7 +666,7 @@ document.getElementById('weapons').addEventListener('click', e=>{
   weaponLimit = parseFloat(btn.dataset.limit);
   weaponName  = btn.childNodes[0].textContent.trim();
   if(navigator.vibrate) navigator.vibrate(8);
-  updateResult();
+  updateAll();
 });
 
 /* ================= РЕЖИМ ПЛОЩАДКИ ================= */
@@ -531,30 +678,53 @@ document.getElementById('modes').addEventListener('click', e=>{
   btn.classList.add('active');
   mode = btn.dataset.mode;
   if(navigator.vibrate) navigator.vibrate(8);
-  updateResult();
+  updateAll();
 });
-
-/* ================= ВВОД СКОРОСТИ ================= */
-const speedInput = document.getElementById('speed');
-speedInput.addEventListener('input', updateResult);
 
 /* ================= ЛОГИКА РЕЗУЛЬТАТА ================= */
 const resultEl = document.getElementById('result');
 const statusEl = document.getElementById('status');
 const bigEl    = document.getElementById('big');
-const equivEl  = document.getElementById('equiv');
 const noteEl   = document.getElementById('note');
+const eqVal    = document.getElementById('eqVal');
+const eqSub    = document.getElementById('eqSub');
+const energyVal= document.getElementById('energyVal');
+const energySub= document.getElementById('energySub');
 
 let lastClass = '';
 
-function updateResult(){
-  const v = parseFloat(speedInput.value);
+/* перевод граммов в кг для расчёта энергии */
+function calcEnergy(v, weightG){
+  const m = weightG / 1000;
+  return 0.5 * m * v * v;
+}
 
-  if(isNaN(v) || v <= 0){
+function updateAll(){
+  const v = parseFloat(speedInput.value);
+  const valid = !isNaN(v) && v > 0;
+
+  /* --- Эквивалент и энергия (показываем всегда, если скорость введена) --- */
+  if(valid){
+    // эквивалент при 0,20 г по энергии: v_eq = v * sqrt(m / 0.20)
+    const vEq020 = v * Math.sqrt(weight / 0.20);
+    eqVal.textContent = vEq020.toFixed(1);
+    eqSub.textContent = `при весе ${weight.toFixed(2)} г · факт ${v.toFixed(1)} м/с`;
+
+    const energy = calcEnergy(v, weight);
+    energyVal.textContent = energy.toFixed(2);
+    energySub.textContent = `шар ${weight.toFixed(2)} г · ${v.toFixed(1)} м/с`;
+  } else {
+    eqVal.textContent = '—';
+    eqSub.textContent = '—';
+    energyVal.textContent = '—';
+    energySub.textContent = '—';
+  }
+
+  /* --- Блок допуска --- */
+  if(!valid){
     resultEl.className = 'result';
     statusEl.textContent = 'Введите скорость';
     bigEl.textContent = '— м/с';
-    equivEl.textContent = '';
     noteEl.textContent = '';
     lastClass = '';
     return;
@@ -565,45 +735,33 @@ function updateResult(){
 
   let limit = weaponLimit;
   let limitReason = weaponName;
-  let useEq = false;
+  let cmpValue = vEq;
+  let useCqb = false;
 
   if(mode === 'cqb'){
-    // п.11.6: пересчёт к эквиваленту 120 м/с при 0,20 г
-    // Сначала энергию текущего замера приводим к 0,20 г
     const vEq020 = v * Math.sqrt(weight / CQB_EQ_WEIGHT);
     limit = CQB_EQ_LIMIT;
     limitReason = 'Здание / CQB (п. 11.6)';
-    useEq = true;
-    renderResult(v, vEq, vEq020, limit, limitReason, useEq);
-    return;
+    cmpValue = vEq020;
+    useCqb = true;
   }
 
-  renderResult(v, vEq, vEq, limit, limitReason, false);
-}
-
-function renderResult(v, vEq, cmpValue, limit, limitReason, useEq){
   bigEl.textContent = v.toFixed(1) + ' м/с';
-
-  if(useEq){
-    equivEl.textContent = `Эквивалент при 0,20 г: ${cmpValue.toFixed(1)} м/с`;
-  } else if(Math.abs(weight - BASE_WEIGHT) > 0.001){
-    equivEl.textContent = `Эквивалент при 0,43 г: ${vEq.toFixed(1)} м/с`;
-  } else {
-    equivEl.textContent = '';
-  }
 
   const yellowMax = limit + TOLERANCE;
   let cls, st, nt;
 
   if(cmpValue <= limit){
     cls='green'; st='ДОПУСК';
-    nt=`В пределах лимита (${limitReason}: до ${limit} м/с).`;
+    nt = useCqb
+      ? `В пределах лимита CQB (эквивалент 0,20 г: до ${limit} м/с).`
+      : `В пределах лимита (${limitReason}: до ${limit} м/с при 0,43 г).`;
   } else if(cmpValue <= yellowMax){
     cls='yellow'; st='НА ГРАНИЦЕ';
-    nt=`В пределах допуска +${TOLERANCE} м/с (${limitReason}: до ${limit} м/с).`;
+    nt = `В пределах допуска +${TOLERANCE} м/с (${limitReason}: до ${limit} м/с).`;
   } else {
     cls='red'; st='НАРУШЕНИЕ';
-    nt=`Превышен лимит (${limitReason}: до ${limit} м/с). К использованию не допускается.`;
+    nt = `Превышен лимит (${limitReason}: до ${limit} м/с). К использованию не допускается.`;
   }
 
   const full = 'result ' + cls;
@@ -644,7 +802,8 @@ document.addEventListener('keydown', e=>{
 
 /* ================= ИНИЦИАЛИЗАЦИЯ ================= */
 renderWeight();
-updateResult();
+renderSpeedSlider(0);
+updateAll();
 </script>
 </body>
 </html>
