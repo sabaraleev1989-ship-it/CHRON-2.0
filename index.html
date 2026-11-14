@@ -14,23 +14,25 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   
-  /* Исправление белых полос */
+  /* Жесткий фон без белых полос и отскоков */
   html, body {
     margin: 0; padding: 0;
     background-color: var(--bg);
     width: 100%; height: 100%;
-    overscroll-behavior-y: none; /* Отключает эффект "оттягивания" страницы */
+    overscroll-behavior-y: none;
+    position: fixed; /* Фиксируем body, чтобы избежать багов скролла на iOS */
   }
   
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:radial-gradient(1200px 600px at 50% -10%, #16233a 0%, var(--bg) 60%);
     color:var(--txt);
-    min-height:100vh; display:flex; flex-direction:column;
+    display:flex; flex-direction:column;
     padding:14px; padding-top: max(14px, env(safe-area-inset-top));
     padding-bottom: max(14px, env(safe-area-inset-bottom));
     gap:14px; user-select:none;
-    overflow-x:hidden;
+    overflow-y: auto; /* Скролл внутри body */
+    -webkit-overflow-scrolling: touch;
   }
 
   header{display:flex; align-items:center; justify-content:space-between; gap:10px;}
@@ -61,6 +63,7 @@
     background:var(--panel); border:1px solid var(--line);
     border-radius:16px; padding:14px;
     box-shadow:0 6px 24px #0006;
+    flex-shrink: 0; /* Не сжимать панели */
   }
   .panel.accent{
     border-color:#1f6feb66;
@@ -207,6 +210,7 @@
     background:var(--panel);
     box-shadow:0 6px 24px #0006;
     transition:border-color .25s, background .25s, box-shadow .25s, transform .15s;
+    flex-shrink: 0;
   }
   .result.pulse{animation:pulse .35s ease;}
   @keyframes pulse{
@@ -262,6 +266,7 @@
   footer{
     margin-top:auto; text-align:center; font-size:11px;
     color:var(--dim); line-height:1.5; padding-top:6px;
+    flex-shrink: 0;
   }
   footer b{color:var(--txt);}
 
@@ -364,14 +369,14 @@
 <section class="panel accent">
   <div class="label">Замер скорости</div>
   <div class="speed-row">
-    <input class="speed-input" id="speed" type="number" inputmode="decimal" placeholder="0" min="0" max="250" step="0.1">
+    <input class="speed-input" id="speed" type="number" inputmode="decimal" placeholder="0" min="0" max="250" step="1">
     <div class="speed-unit">м/с</div>
   </div>
   <div class="slider-track" id="speedTrack">
     <div class="slider-fill" id="speedFill"></div>
     <div class="slider-thumb" id="speedThumb"></div>
   </div>
-  <div class="speed-fine-badge" id="speedFineBadge">Точный выбор · плавно</div>
+  <div class="speed-fine-badge" id="speedFineBadge">Точный выбор (двигай медленно)</div>
 
   <!-- Эквивалент и энергия -->
   <div class="equiv-grid">
@@ -422,6 +427,7 @@
       <button class="modal-close" id="closeRules">✕</button>
     </div>
     <div class="modal-body">
+      <!-- Контент правил оставлен без изменений -->
       <div class="rule-block"><h3>1. Общие положения</h3><p>Страйкбол — некоммерческая командная военно-спортивная игра. Участники — граждане 18+, имеющие своё оружие и экипировку и согласные с правилами. Команда — 5+ человек в единообразной форме. Запрещена символика сторон текущих конфликтов на территории бывшего СССР.</p></div>
       <div class="rule-block"><h3>2. Цель и ход игры</h3><p>Игра по заранее согласованному сценарию на открытой территории. Жилой лагерь обносится белой лентой и не является игровой территорией. Игра ведётся на честность — споры во время игры не допускаются, заспорившие выбывают до конца игры. Посредники контролируют соблюдение правил, их решения обязательны.</p></div>
       <div class="rule-block"><h3>3. Игровое оружие</h3><p>Допускается пневматика промышленного изготовления под шары 6 мм и 8 мм. Пиротехника — только сертифицированная, на базе петард до «Корсар № 6». Поражающий элемент гранат — шары до 0,20 г или цельный горох. Запрещены парафиновые гранаты, сигнальные ракеты, маркирующие выстрелы для подствольников. Ночью — только трассерные шары.</p></div>
@@ -561,12 +567,10 @@ document.getElementById('quickWeights').addEventListener('click', e=>{
 });
 
 /* ====================================================================
-   СЛАЙДЕР СКОРОСТИ С "УМНЫМ" ЗАМЕДЛЕНИЕМ (FINE-TUNING)
+   СЛАЙДЕР СКОРОСТИ: ИСПРАВЛЕННЫЙ «УМНЫЙ» РЕЖИМ
    ==================================================================== */
 const SPEED_MIN = 0, SPEED_MAX = 200;
-const SPEED_STEP_FINE = 1;       // Шаг в точном режиме (1 м/с)
-const SPEED_STEP_COARSE = 1;     // Шаг при быстром движении
-const FINE_THRESHOLD = 0.18;     // Порог скорости пальца для включения точного режима (px/ms)
+const FINE_THRESHOLD = 0.18; // Порог скорости пальца (px/ms)
 
 const speedTrack = document.getElementById('speedTrack');
 const speedFill  = document.getElementById('speedFill');
@@ -576,10 +580,8 @@ const speedFineBadge = document.getElementById('speedFineBadge');
 
 let speedDragging = false;
 let sLastX = 0, sLastT = 0, sLastVibe = 0;
-
-// Переменные для "умного" замедления
-let currentVirtualX = 0; // Виртуальная позиция ползунка (0 - 100%)
-let lastPointerX = 0;    // Реальная позиция пальца
+let currentVirtualX = 0; // Виртуальная позиция ползунка в пикселях
+let lastPointerX = 0;    // Реальная позиция пальца в пикселях
 
 function speedToPct(v){ return ((v - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100; }
 function pctToSpeed(p){ return SPEED_MIN + (p / 100) * (SPEED_MAX - SPEED_MIN); }
@@ -602,7 +604,6 @@ function vibrateSpeed(strong){
 
 function setSpeedFromEvent(e){
   const rect = speedTrack.getBoundingClientRect();
-  // Реальная координата пальца относительно трека (в пикселях)
   const pointerX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
   
   const now = performance.now();
@@ -617,22 +618,20 @@ function setSpeedFromEvent(e){
   speedInput.classList.toggle('fine', isFine);
   speedThumb.classList.add('active');
 
-  // Если мы в точном режиме, ползунок двигается медленнее пальца (коэффициент 0.15)
-  // Если быстро — двигается 1 к 1.
-  const moveFactor = isFine ? 0.15 : 1.0;
+  // Коэффициент замедления: 0.5 (в 2 раза медленнее пальца)
+  const moveFactor = isFine ? 0.5 : 1.0;
   
-  // Вычисляем, на сколько пикселей сдвинулся палец с прошлого раза
+  // Насколько сдвинулся палец
   const deltaX = pointerX - lastPointerX;
   lastPointerX = pointerX;
 
-  // Применяем сдвиг к виртуальной позиции
-  let currentPct = speedToPct(parseFloat(speedInput.value) || 0);
-  currentPct += (deltaX / rect.width) * 100 * moveFactor;
-  currentPct = Math.min(Math.max(currentPct, 0), 100);
+  // Применяем сдвиг к виртуальной позиции в пикселях
+  currentVirtualX += deltaX * moveFactor;
+  currentVirtualX = Math.min(Math.max(currentVirtualX, 0), rect.width);
 
-  // Переводим обратно в скорость и округляем до 1
-  let v = pctToSpeed(currentPct);
-  v = Math.round(v);
+  // Переводим виртуальную позицию в проценты и скорость
+  const currentPct = (currentVirtualX / rect.width) * 100;
+  let v = Math.round(pctToSpeed(currentPct));
 
   if(parseFloat(speedInput.value) !== v){
     speedInput.value = v;
@@ -650,8 +649,9 @@ speedTrack.addEventListener('pointerdown', e=>{
   const rect = speedTrack.getBoundingClientRect();
   lastPointerX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
   
-  // При клике сразу прыгаем в точку
-  const clickPct = (lastPointerX / rect.width) * 100;
+  // Если палец нажал, сразу прыгаем в эту точку
+  currentVirtualX = lastPointerX;
+  const clickPct = (currentVirtualX / rect.width) * 100;
   let v = Math.round(pctToSpeed(clickPct));
   speedInput.value = v;
   renderSpeedSlider(v);
@@ -668,7 +668,6 @@ function endSpeedDrag(){
   speedFineBadge.classList.remove('on');
   speedInput.classList.remove('fine');
 
-  // При отпускании фиксируем (вдруг там что-то с копейками)
   const cur = parseFloat(speedInput.value);
   if(!isNaN(cur)){
     const floored = Math.floor(cur);
