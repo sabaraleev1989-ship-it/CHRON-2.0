@@ -6,7 +6,6 @@
 <meta name="theme-color" content="#0e1116">
 <title>Хронограф 2.0 — СК Скорпион</title>
 
-<!-- Подключаем вынесенный манифест -->
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="23.png">
 
@@ -40,35 +39,22 @@
     min-height: 100vh;
     position: relative;
     z-index: 1;
-  }
-
-  /* --- ИСПРАВЛЕНИЕ ДРОЖАНИЯ ФОНА --- */
-  /* Фон вынесен в отдельный неподвижный слой */
-  .bg-fixed {
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background-image: url('34.png'); /* ФОН 34.PNG */
+    
+    background-image: url('34.png');
     background-size: cover;
     background-position: center;
+    background-attachment: fixed;
     background-repeat: no-repeat;
-    /* Аппаратное ускорение, чтобы не дрожало */
-    transform: translate3d(0,0,0);
-    -webkit-transform: translate3d(0,0,0);
-    will-change: transform;
-  }
-  
-  .bg-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background: rgba(14, 17, 22, 0.85);
-    transform: translate3d(0,0,0);
-    -webkit-transform: translate3d(0,0,0);
-    will-change: transform;
   }
 
-  /* ================= ЗАСТАВКА (SPLASH SCREEN) ================= */
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: rgba(14, 17, 22, 0.85); 
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* ================= ЗАСТАВКА ================= */
   #splash-screen {
     position: fixed; inset: 0; z-index: 9999;
     background-color: var(--bg);
@@ -323,6 +309,16 @@
   .result .status{font-size:12px; font-weight:800; letter-spacing:.8px; text-transform:uppercase;}
   .result .big{font-size:42px; font-weight:800; margin:4px 0;}
   .result .note{font-size:12px; margin-top:8px; line-height:1.4;}
+  
+  .rule-link {
+    color: var(--accent2);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    cursor: pointer;
+  }
+  .rule-link:active { opacity: 0.7; }
+
   .result .weapon-info{
     margin-top:12px; padding-top:12px;
     border-top:1px solid #21262d;
@@ -385,7 +381,7 @@
   .modal{
     background:var(--panel); border:1px solid var(--line);
     border-radius:18px 18px 0 0; width:100%; max-width:600px;
-    max-height:88vh; display:flex; flex-direction:column;
+    max-height:90vh; display:flex; flex-direction:column;
     transform:translateY(30px); transition:transform .25s ease;
     box-shadow: 0 -10px 40px #0008;
     backdrop-filter: blur(10px);
@@ -424,11 +420,31 @@
   .rules-nav a:active { background: #1f6feb33; }
 
   .modal-body{
-    overflow-y:auto; padding:14px 16px 30px;
+    overflow-y:auto; padding:0 16px 30px; /* убран padding-top, чтобы закрепленная шапка была вплотную */
     -webkit-overflow-scrolling:touch;
     font-size:13px; line-height:1.5;
   }
   
+  /* --- ЗАКРЕПЛЕННОЕ ПРИЛОЖЕНИЕ 1 --- */
+  .sticky-app1 {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--panel); /* Чтобы текст под ним не просвечивал */
+    padding: 12px 0;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--accent2);
+    box-shadow: 0 8px 15px -5px rgba(0,0,0,0.8);
+  }
+
+  .sticky-app1 .rule-block {
+    border: 2px solid var(--accent); /* Яркая рамка */
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(31, 111, 235, 0.1); /* Легкий синий оттенок */
+    border-bottom: 2px solid var(--accent); /* Перебиваем стандартный border */
+  }
+
   .rule-block{padding:12px 0; border-bottom:1px solid #21262d;}
   .rule-block:last-child{border-bottom:none;}
   .rule-block h3{margin:0 0 6px; font-size:13px; font-weight:700; color:var(--accent2);}
@@ -462,10 +478,6 @@
 </style>
 </head>
 <body>
-
-<!-- ФИКСИРОВАННЫЙ ФОН -->
-<div class="bg-fixed"></div>
-<div class="bg-overlay"></div>
 
 <!-- ================= ЗАСТАВКА ================= -->
 <div id="splash-screen">
@@ -529,7 +541,6 @@
   </div>
   <div class="speed-fine-badge" id="speedFineBadge">Точный выбор (двигай медленно)</div>
 
-  <!-- Эквивалент и энергия -->
   <div class="equiv-grid">
     <div class="equiv-card hl" id="eqCard">
       <div class="cap">Эквивалент на 0,20 г</div>
@@ -579,69 +590,66 @@
     </div>
     
     <div class="rules-nav">
-      <a href="#r-speed">Скорости (Прил. 1)</a>
-      <a href="#r-pyro">Пиротехника и Гранаты</a>
-      <a href="#r-cqb">Здания (CQB)</a>
-      <a href="#r-eye">Защита глаз</a>
-      <a href="#r-mag">Магазины</a>
+      <a href="#r1">1. Общие</a>
+      <a href="#r3">3. Пиротехника</a>
+      <a href="#r4">4. Защита</a>
+      <a href="#r7">7. Убитые</a>
+      <a href="#r8">8. Пленные</a>
+      <a href="#r11">11. Ограничения</a>
     </div>
 
     <div class="modal-body">
-      <div class="rule-block" id="r-speed">
-        <h3>Приложение №1 — скорости вылета и типы оружия</h3>
-        <p>Дульная энергия — не более <span class="hl">3 Дж</span>. Скорости указаны при стрельбе шаром 6 мм массой <span class="hl">0,43 г</span>, с настроенным хоп-апом. Погрешность измерения — <span class="hl">+5 м/с</span>.</p>
-        <table class="speed-table">
-          <tr><th>Тип оружия</th><th>Лимит, м/с</th></tr>
-          <tr><td>Пистолеты и револьверы</td><td><b>75</b></td></tr>
-          <tr><td>Электро/газовое автоматическое (автоматы, ПП)</td><td><b>85</b></td></tr>
-          <tr><td>LSW (лёгкие пулемёты без ленты)</td><td><b>92</b></td></tr>
-          <tr><td>Пулемёты с ленточным питанием (MG)</td><td><b>98</b></td></tr>
-          <tr><td>Станковые и крупнокалиберные</td><td><b>112</b></td></tr>
-          <tr><td>Снайперское оружие (одиночная стрельба)</td><td><b>118</b></td></tr>
-        </table>
-        <span class="sub"><b>Исключения:</b> ВСС (Винторез) снайперской винтовкой <b>не считается</b> (идет как автомат - 85 м/с). РПК-16 признаётся LSW (92 м/с) только при удлинении ствола до 580 мм и установке сошек.</span>
+      
+      <!-- СТИКИ: ЗАКРЕПЛЕННОЕ ПРИЛОЖЕНИЕ 1 -->
+      <div class="sticky-app1">
+        <div class="rule-block" id="r-speed">
+          <h3>Приложение №1 — скорости вылета и типы оружия</h3>
+          <p>Дульная энергия — не более <span class="hl">3 Дж</span>. Скорости указаны при стрельбе шаром 6 мм массой <span class="hl">0,43 г</span>, с настроенным хоп-апом. Погрешность измерения — <span class="hl">+5 м/с</span>.</p>
+          <table class="speed-table">
+            <tr><th>Тип оружия</th><th>Лимит, м/с</th></tr>
+            <tr><td>Пистолеты и револьверы</td><td><b>75</b></td></tr>
+            <tr><td>Электро/газовое автоматическое (автоматы, ПП)</td><td><b>85</b></td></tr>
+            <tr><td>LSW (лёгкие пулемёты без ленты)</td><td><b>92</b></td></tr>
+            <tr><td>Пулемёты с лентным питанием (MG)</td><td><b>98</b></td></tr>
+            <tr><td>Станковые и крупнокалиберные</td><td><b>112</b></td></tr>
+            <tr><td>Снайперское оружие (одиночная стрельба)</td><td><b>118</b></td></tr>
+          </table>
+          <span class="sub"><b>Исключения:</b> ВСС (Винторез) снайперской винтовкой <b>не считается</b> (идет как автомат - 85 м/с). РПК-16 признаётся LSW (92 м/с) только при удлинении ствола до 580 мм и установке сошек.</span>
+        </div>
       </div>
 
-      <div class="rule-block" id="r-pyro">
+      <!-- ОСТАЛЬНЫЕ ПУНКТЫ ИДУТ СТРОГО ПО ПОРЯДКУ -->
+      <div class="rule-block" id="r1">
+        <h3>1. Общие положения</h3>
+        <p>Участники — граждане <span class="hl">18+</span>, имеющие своё оружие и согласные с правилами. Команда — от <span class="hl">5 человек</span> в единообразной форме. Запрещена символика сторон текущих конфликтов на территории бывшего СССР.</p>
+      </div>
+
+      <div class="rule-block" id="r3">
         <h3>3. Игровое оружие и пиротехника</h3>
         <p>Использовать можно только сертифицированную пиротехнику на базе петард до <span class="hl">«Корсар № 6» включительно</span>.</p>
         <p>Поражающий элемент гранат — шары калибра 6 мм весом до <span class="hl">0,20 г</span> или цельный горох.</p>
         <span class="sub"><b>Категорически запрещено:</b> парафиновые гранаты, сигнальные/осветительные ракеты, маркирующие выстрелы для подствольников. Любая пиротехника проходит проверку комиссией перед игрой.</span>
       </div>
 
-      <div class="rule-block" id="r-cqb">
-        <h3>11.6. Ограничения для зданий (CQB)</h3>
-        <p>В замкнутых пространствах (здания/сооружения) и при возможности стрельбы на очень коротких дистанциях запрещено оружие с энергией выше эквивалента шара <span class="hl">0,2 г на скорости 120 м/с</span>.</p>
-      </div>
-
-      <div class="rule-block" id="r-eye">
+      <div class="rule-block" id="r4">
         <h3>4. Защита глаз</h3>
         <p>Игрок без защиты глаз, выдерживающей в упор выстрел шаром на скорости <span class="hl">172 м/с</span> и весе шара <span class="hl">0,2 г</span>, к игре не допускается.</p>
       </div>
 
-      <div class="rule-block" id="r-mag">
-        <h3>Приложение №1 (п. 1.2) — Магазины</h3>
-        <p>Для ручного оружия допускается использование штатных магазинов только механического типа с емкостью не более <span class="hl">150 шаров</span>. Бункеры запрещены (кроме оговоренных случаев вроде РПК-16).</p>
-      </div>
-
-      <div class="rule-block">
-        <h3>1. Общие положения</h3>
-        <p>Участники — граждане <span class="hl">18+</span>, имеющие своё оружие и согласные с правилами. Команда — от <span class="hl">5 человек</span> в единообразной форме. Запрещена символика сторон текущих конфликтов на территории бывшего СССР.</p>
-      </div>
-
-      <div class="rule-block">
+      <div class="rule-block" id="r7">
         <h3>7. «Убитые»</h3>
         <p>«Убит» — при попадании хотя бы одним шаром в любую часть тела или снаряжения. Рикошет и попадание в оружие не считаются. Граната — радиус <span class="hl">3 м</span> или прямое попадание. Днём красная повязка, ночью — мигающий фонарь (кроме белого). Стробоскопы запрещены.</p>
       </div>
 
-      <div class="rule-block">
+      <div class="rule-block" id="r8">
         <h3>8. Пленные</h3>
         <p>Пленение — касание плеча/спины. Пленный отвечает только «да», «нет», «не знаю», максимум на <span class="hl">3 вопроса</span>. Время плена — не более <span class="hl">1 часа</span>. Оружие не изымается, но применять его нельзя.</p>
       </div>
 
-      <div class="rule-block">
+      <div class="rule-block" id="r11">
         <h3>11. Ограничения (общие)</h3>
         <p>Запрещено: стрелять по гражданским и красным повязкам, играть в опьянении, активная радиоборьба, лазеры видимого диапазона (ЛЦУ, лазерные фары). «Режим тишины» в лагере с <span class="hl">24:00 до 06:00</span>.</p>
+        <span class="sub" id="p11_6"><b>п. 11.6 (здания/CQB):</b> в замкнутых пространствах и при выстрелах на очень коротких дистанциях запрещено оружие с энергией выше эквивалента шара <span class="hl">0,2 г на скорости 120 м/с</span>.</span>
       </div>
 
       <div class="footnote">
@@ -653,12 +661,10 @@
 </div>
 
 <script>
-/* ================= РЕГИСТРАЦИЯ SERVICE WORKER (ОФФЛАЙН) ================= */
+/* ================= РЕГИСТРАЦИЯ SERVICE WORKER ================= */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW зарегистрирован', reg))
-      .catch(err => console.log('Ошибка SW', err));
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('Ошибка SW', err));
   });
 }
 
@@ -975,17 +981,20 @@ function updateAll(){
     let cls, st, nt;
 
     if(vEq020 <= cqbLimit){
-      cls='green'; st='ДОПУСК'; nt = `В пределах лимита для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с).`;
+      cls='green'; st='ДОПУСК'; 
+      nt = `В пределах лимита для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с по <span class="rule-link" data-target="p11_6">п. 11.6</span>).`;
     } else if(vEq020 <= cqbYellow){
-      cls='yellow'; st='НА ГРАНИЦЕ'; nt = `В пределах допуска +${TOLERANCE} м/с для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с).`;
+      cls='yellow'; st='НА ГРАНИЦЕ'; 
+      nt = `В пределах допуска +${TOLERANCE} м/с для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с по <span class="rule-link" data-target="p11_6">п. 11.6</span>).`;
     } else {
-      cls='red'; st='НАРУШЕНИЕ'; nt = `Превышен лимит для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с). К использованию не допускается.`;
+      cls='red'; st='НАРУШЕНИЕ'; 
+      nt = `Превышен лимит для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с по <span class="rule-link" data-target="p11_6">п. 11.6</span>). К использованию не допускается.`;
     }
 
     bigEl.textContent = v.toFixed(1) + ' м/с';
     setResultClass(cls);
-    statusEl.textContent = st;
-    noteEl.textContent = nt;
+    statusEl.innerHTML = st;
+    noteEl.innerHTML = nt;
 
     weaponInfo.style.display = 'block';
     wiLines.innerHTML = `
@@ -993,7 +1002,7 @@ function updateAll(){
       <div class="wi-line"><span class="name">Лимит CQB (п.11.6)</span><span class="val">до ${cqbLimit} м/с</span></div>
     `;
     wiVerdict.className = vEq020 <= cqbLimit ? 'wi-allowed' : 'wi-blocked';
-    wiVerdict.textContent = vEq020 <= cqbLimit
+    wiVerdict.innerHTML = vEq020 <= cqbLimit
       ? '✓ Разрешено в здании / CQB'
       : '✗ Запрещено в здании / CQB';
     return;
@@ -1009,17 +1018,19 @@ function updateAll(){
   });
 
   let cls, st, nt;
+  const ruleLink = `<span class="rule-link" data-target="r-speed">Прил. 1</span>`;
+  
   if(allowed.length === WEAPONS.length){
-    cls='green'; st='ДОПУСК'; nt = `Подходит для любого типа оружия (эквивалент 0,43 г: ${vEq.toFixed(1)} м/с).`;
+    cls='green'; st='ДОПУСК'; nt = `Подходит для любого типа оружия (эквивалент 0,43 г: ${vEq.toFixed(1)} м/с по ${ruleLink}).`;
   } else if(allowed.length > 0){
-    cls='yellow'; st='ОГРАНИЧЕНИЕ'; nt = `Подходит не для всех типов. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с.`;
+    cls='yellow'; st='ОГРАНИЧЕНИЕ'; nt = `Подходит не для всех типов. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с (см. ${ruleLink}).`;
   } else {
-    cls='red'; st='НАРУШЕНИЕ'; nt = `Превышены все лимиты. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с. К использованию не допускается.`;
+    cls='red'; st='НАРУШЕНИЕ'; nt = `Превышены все лимиты. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с (см. ${ruleLink}). К использованию не допускается.`;
   }
 
   setResultClass(cls);
-  statusEl.textContent = st;
-  noteEl.textContent = nt;
+  statusEl.innerHTML = st;
+  noteEl.innerHTML = nt;
 
   weaponInfo.style.display = 'block';
   wiLines.innerHTML = WEAPONS.map(w=>{
@@ -1058,16 +1069,32 @@ function setResultClass(cls){
 const modal = document.getElementById('rulesModal');
 const openBtn = document.getElementById('openRules');
 const closeBtn = document.getElementById('closeRules');
+const modalBody = document.querySelector('.modal-body');
 
-function openRules(){
+function openRules(targetId){
   modal.classList.add('open');
   document.body.style.overflow = 'hidden'; 
+  
+  // Если передан ID, скроллим к нему
+  if (targetId) {
+    setTimeout(() => {
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Подсветим на секунду
+        targetEl.style.transition = 'background 0.3s';
+        const oldBg = targetEl.style.background;
+        targetEl.style.background = 'rgba(31, 111, 235, 0.3)';
+        setTimeout(() => targetEl.style.background = oldBg, 1000);
+      }
+    }, 300); // Ждем, пока откроется модалка
+  }
 }
 function closeRules(){
   modal.classList.remove('open');
   document.body.style.overflow = ''; 
 }
-openBtn.addEventListener('click', openRules);
+openBtn.addEventListener('click', () => openRules());
 closeBtn.addEventListener('click', closeRules);
 modal.addEventListener('click', e=>{
   if(e.target === modal) closeRules();
@@ -1076,15 +1103,24 @@ document.addEventListener('keydown', e=>{
   if(e.key === 'Escape' && modal.classList.contains('open')) closeRules();
 });
 
+// Навигация по кнопкам в шапке
 document.querySelectorAll('.rules-nav a').forEach(link => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
-    const targetId = link.getAttribute('href');
-    const targetEl = document.querySelector(targetId);
+    const targetId = link.getAttribute('href').substring(1);
+    const targetEl = document.getElementById(targetId);
     if(targetEl) {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
+});
+
+// Клики по сноскам (п. 11.6, Прил. 1) в блоке результата
+document.body.addEventListener('click', e => {
+  if (e.target.classList.contains('rule-link')) {
+    const targetId = e.target.dataset.target;
+    openRules(targetId);
+  }
 });
 
 /* ================= ИНИЦИАЛИЗАЦИЯ ================= */
