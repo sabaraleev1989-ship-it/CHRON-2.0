@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
 <title>Хронограф 2.0 — СК Скорпион</title>
 <style>
   :root{
@@ -12,12 +13,23 @@
     --accent:#1f6feb; --accent2:#3b82f6;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  
+  /* Исправление белых полос */
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--bg);
+    width: 100%; height: 100%;
+    overscroll-behavior-y: none; /* Отключает эффект "оттягивания" страницы */
+  }
+  
   body{
-    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:radial-gradient(1200px 600px at 50% -10%, #16233a 0%, var(--bg) 60%);
     color:var(--txt);
     min-height:100vh; display:flex; flex-direction:column;
-    padding:14px; gap:14px; user-select:none;
+    padding:14px; padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    gap:14px; user-select:none;
     overflow-x:hidden;
   }
 
@@ -153,7 +165,7 @@
   }
   .speed-fine-badge.on{opacity:1;}
 
-  /* ---------- Эквивалент и энергия — теперь внутри панели замера ---------- */
+  /* ---------- Эквивалент и энергия ---------- */
   .equiv-grid{
     display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;
   }
@@ -359,7 +371,7 @@
     <div class="slider-fill" id="speedFill"></div>
     <div class="slider-thumb" id="speedThumb"></div>
   </div>
-  <div class="speed-fine-badge" id="speedFineBadge">Точный выбор · шаг 0.5 м/с</div>
+  <div class="speed-fine-badge" id="speedFineBadge">Точный выбор · плавно</div>
 
   <!-- Эквивалент и энергия -->
   <div class="equiv-grid">
@@ -548,16 +560,13 @@ document.getElementById('quickWeights').addEventListener('click', e=>{
   if(navigator.vibrate) navigator.vibrate(8);
 });
 
-/* ================= СЛАЙДЕР СКОРОСТИ ================= */
-/*
-  Ключевое изменение: в точном режиме шаг теперь 0.5 м/с
-  (было 0.1) — цифры перебираются медленнее и их легче поймать.
-  Порог точного режима поднят до 0.28 px/ms — замедление ловится раньше.
-*/
+/* ====================================================================
+   СЛАЙДЕР СКОРОСТИ С "УМНЫМ" ЗАМЕДЛЕНИЕМ (FINE-TUNING)
+   ==================================================================== */
 const SPEED_MIN = 0, SPEED_MAX = 200;
-const SPEED_STEP_FINE = 0.5;     // <— было 0.1
-const SPEED_STEP_COARSE = 1;
-const FINE_THRESHOLD = 0.28;     // <— было 0.20, теперь точный режим включается легче
+const SPEED_STEP_FINE = 1;       // Шаг в точном режиме (1 м/с)
+const SPEED_STEP_COARSE = 1;     // Шаг при быстром движении
+const FINE_THRESHOLD = 0.18;     // Порог скорости пальца для включения точного режима (px/ms)
 
 const speedTrack = document.getElementById('speedTrack');
 const speedFill  = document.getElementById('speedFill');
@@ -567,9 +576,13 @@ const speedFineBadge = document.getElementById('speedFineBadge');
 
 let speedDragging = false;
 let sLastX = 0, sLastT = 0, sLastVibe = 0;
-let sFineActive = false;
+
+// Переменные для "умного" замедления
+let currentVirtualX = 0; // Виртуальная позиция ползунка (0 - 100%)
+let lastPointerX = 0;    // Реальная позиция пальца
 
 function speedToPct(v){ return ((v - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100; }
+function pctToSpeed(p){ return SPEED_MIN + (p / 100) * (SPEED_MAX - SPEED_MIN); }
 
 function renderSpeedSlider(v){
   const p = Math.min(Math.max(speedToPct(v), 0), 100);
@@ -589,30 +602,41 @@ function vibrateSpeed(strong){
 
 function setSpeedFromEvent(e){
   const rect = speedTrack.getBoundingClientRect();
-  const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-  const raw = SPEED_MIN + (x / rect.width) * (SPEED_MAX - SPEED_MIN);
-
+  // Реальная координата пальца относительно трека (в пикселях)
+  const pointerX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+  
   const now = performance.now();
   const dt = Math.max(now - sLastT, 1);
   const dx = Math.abs(e.clientX - sLastX);
   const pxPerMs = dx / dt;
+  
   sLastX = e.clientX; sLastT = now;
 
-  const fine = pxPerMs < FINE_THRESHOLD;
-  sFineActive = fine;
-  speedFineBadge.classList.toggle('on', fine);
-  speedInput.classList.toggle('fine', fine);
+  const isFine = pxPerMs < FINE_THRESHOLD;
+  speedFineBadge.classList.toggle('on', isFine);
+  speedInput.classList.toggle('fine', isFine);
   speedThumb.classList.add('active');
 
-  const step = fine ? SPEED_STEP_FINE : SPEED_STEP_COARSE;
-  let v = Math.round(raw / step) * step;
-  v = Math.min(Math.max(v, SPEED_MIN), SPEED_MAX);
-  // в точном режиме храним десятые (шаг 0.5), иначе — целое
-  v = fine ? Math.round(v * 10) / 10 : Math.round(v);
+  // Если мы в точном режиме, ползунок двигается медленнее пальца (коэффициент 0.15)
+  // Если быстро — двигается 1 к 1.
+  const moveFactor = isFine ? 0.15 : 1.0;
+  
+  // Вычисляем, на сколько пикселей сдвинулся палец с прошлого раза
+  const deltaX = pointerX - lastPointerX;
+  lastPointerX = pointerX;
+
+  // Применяем сдвиг к виртуальной позиции
+  let currentPct = speedToPct(parseFloat(speedInput.value) || 0);
+  currentPct += (deltaX / rect.width) * 100 * moveFactor;
+  currentPct = Math.min(Math.max(currentPct, 0), 100);
+
+  // Переводим обратно в скорость и округляем до 1
+  let v = pctToSpeed(currentPct);
+  v = Math.round(v);
 
   if(parseFloat(speedInput.value) !== v){
     speedInput.value = v;
-    vibrateSpeed(fine);
+    vibrateSpeed(isFine);
     updateAll();
   }
   renderSpeedSlider(v);
@@ -622,20 +646,32 @@ speedTrack.addEventListener('pointerdown', e=>{
   speedDragging = true;
   speedTrack.setPointerCapture(e.pointerId);
   sLastX = e.clientX; sLastT = performance.now();
-  setSpeedFromEvent(e);
+  
+  const rect = speedTrack.getBoundingClientRect();
+  lastPointerX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+  
+  // При клике сразу прыгаем в точку
+  const clickPct = (lastPointerX / rect.width) * 100;
+  let v = Math.round(pctToSpeed(clickPct));
+  speedInput.value = v;
+  renderSpeedSlider(v);
+  updateAll();
 });
-speedTrack.addEventListener('pointermove', e=>{ if(speedDragging) setSpeedFromEvent(e); });
+
+speedTrack.addEventListener('pointermove', e=>{ 
+  if(speedDragging) setSpeedFromEvent(e); 
+});
 
 function endSpeedDrag(){
   speedDragging = false;
   speedThumb.classList.remove('active');
   speedFineBadge.classList.remove('on');
   speedInput.classList.remove('fine');
-  sFineActive = false;
 
+  // При отпускании фиксируем (вдруг там что-то с копейками)
   const cur = parseFloat(speedInput.value);
   if(!isNaN(cur)){
-    const floored = Math.floor(cur);   // 88.5 → 88, 88.9 → 88
+    const floored = Math.floor(cur);
     speedInput.value = floored;
     renderSpeedSlider(floored);
     updateAll();
