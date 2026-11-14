@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#0e1116">
 <title>Хронограф 2.0 — СК Скорпион</title>
 
-<link rel="manifest" href='data:application/manifest+json,{"name":"Хронограф 2.0","short_name":"Хронограф","start_url":".","display":"standalone","background_color":"%230e1116","theme_color":"%230e1116","icons":[{"src":"23.png","sizes":"192x192","type":"image/png"},{"src":"23.png","sizes":"512x512","type":"image/png"}]}'>
+<!-- Подключаем вынесенный манифест -->
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="23.png">
 
 <style>
-  /* Добавляем боевой шрифт */
   @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Share+Tech+Mono&display=swap');
 
   :root{
@@ -22,34 +22,50 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   
-  html, body {
+  html {
     margin: 0; padding: 0;
     background-color: var(--bg);
-    width: 100%;
+    width: 100%; height: 100%;
     overscroll-behavior-y: none;
   }
   
-  body{
+  body {
+    margin: 0; padding: 0;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color:var(--txt);
     display:flex; flex-direction:column;
     padding:14px; padding-top: max(14px, env(safe-area-inset-top));
     padding-bottom: max(14px, env(safe-area-inset-bottom));
     gap:14px; user-select:none;
-    -webkit-overflow-scrolling: touch;
-    
-    /* ФОН ПРИЛОЖЕНИЯ ИЗМЕНЕН НА 34.PNG */
-    background-image: url('34.png');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
   }
 
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background: rgba(14, 17, 22, 0.85); 
+  /* --- ИСПРАВЛЕНИЕ ДРОЖАНИЯ ФОНА --- */
+  /* Фон вынесен в отдельный неподвижный слой */
+  .bg-fixed {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image: url('34.png'); /* ФОН 34.PNG */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Аппаратное ускорение, чтобы не дрожало */
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+    will-change: transform;
+  }
+  
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
     z-index: -1;
+    background: rgba(14, 17, 22, 0.85);
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+    will-change: transform;
   }
 
   /* ================= ЗАСТАВКА (SPLASH SCREEN) ================= */
@@ -60,8 +76,8 @@
     background-size: cover;
     background-position: center;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: flex-end; /* Текст прижат к низу */
-    padding-bottom: max(40px, env(safe-area-inset-bottom)); /* Отступ снизу */
+    align-items: center; justify-content: flex-end; 
+    padding-bottom: max(40px, env(safe-area-inset-bottom)); 
     transition: opacity 0.8s ease, visibility 0.8s ease;
   }
   
@@ -72,7 +88,7 @@
 
   #splash-screen::before {
     content: ''; position: absolute; inset: 0;
-    background: rgba(0, 0, 0, 0.4); /* Легкое затемнение */
+    background: rgba(0, 0, 0, 0.4); 
   }
 
   .splash-content {
@@ -81,7 +97,6 @@
     width: 100%; padding: 0 20px; gap: 8px;
   }
 
-  /* Название команды внизу и поменьше */
   .splash-title {
     font-size: 14px; font-weight: 700; letter-spacing: 2px;
     color: var(--dim); text-transform: uppercase;
@@ -89,9 +104,8 @@
     text-shadow: 0 2px 4px #000;
   }
 
-  /* Боевой антуражный текст */
   .splash-loading {
-    font-family: 'Share Tech Mono', monospace; /* Шрифт как у терминала/маркировки */
+    font-family: 'Share Tech Mono', monospace; 
     font-size: 18px; font-weight: 700; letter-spacing: 6px;
     color: #e6edf3; margin-top: 10px;
     display: flex; gap: 2px;
@@ -103,7 +117,6 @@
     animation: fade-letter 3s infinite;
   }
   
-  /* Антуражная задержка появления букв (как в военных рациях) */
   .splash-loading span:nth-child(1) { animation-delay: 0.1s; }
   .splash-loading span:nth-child(2) { animation-delay: 0.3s; }
   .splash-loading span:nth-child(3) { animation-delay: 0.5s; }
@@ -450,14 +463,16 @@
 </head>
 <body>
 
+<!-- ФИКСИРОВАННЫЙ ФОН -->
+<div class="bg-fixed"></div>
+<div class="bg-overlay"></div>
+
 <!-- ================= ЗАСТАВКА ================= -->
 <div id="splash-screen">
   <div class="splash-content">
-    <!-- Антуражный текст загрузки -->
     <div class="splash-loading">
       <span>З</span><span>А</span><span>Г</span><span>Р</span><span>У</span><span>З</span><span>К</span><span>А</span>
     </div>
-    <!-- Название команды снизу и маленькое -->
     <div class="splash-title">СК «Скорпион»</div>
   </div>
 </div>
@@ -638,6 +653,15 @@
 </div>
 
 <script>
+/* ================= РЕГИСТРАЦИЯ SERVICE WORKER (ОФФЛАЙН) ================= */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW зарегистрирован', reg))
+      .catch(err => console.log('Ошибка SW', err));
+  });
+}
+
 /* ================= ЗАСТАВКА ================= */
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -767,7 +791,7 @@ document.getElementById('quickWeights').addEventListener('click', e=>{
 });
 
 /* ====================================================================
-   СЛАЙДЕР СКОРОСТИ С УМНЫМ ЗАМЕДЛЕНИЕМ
+   СЛАЙДЕР СКОРОСТИ
    ==================================================================== */
 const SPEED_MIN = 0, SPEED_MAX = 200;
 const FINE_THRESHOLD = 0.18; 
