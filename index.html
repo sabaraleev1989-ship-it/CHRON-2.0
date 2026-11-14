@@ -420,29 +420,19 @@
   .rules-nav a:active { background: #1f6feb33; }
 
   .modal-body{
-    overflow-y:auto; padding:0 16px 30px; /* убран padding-top, чтобы закрепленная шапка была вплотную */
+    overflow-y:auto; padding:14px 16px 30px;
     -webkit-overflow-scrolling:touch;
     font-size:13px; line-height:1.5;
   }
   
-  /* --- ЗАКРЕПЛЕННОЕ ПРИЛОЖЕНИЕ 1 --- */
-  .sticky-app1 {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--panel); /* Чтобы текст под ним не просвечивал */
-    padding: 12px 0;
-    margin-bottom: 12px;
-    border-bottom: 2px solid var(--accent2);
-    box-shadow: 0 8px 15px -5px rgba(0,0,0,0.8);
-  }
-
-  .sticky-app1 .rule-block {
+  /* --- ВЫДЕЛЕННОЕ ПРИЛОЖЕНИЕ 1 (БЕЗ STICKY) --- */
+  .app1-highlight {
     border: 2px solid var(--accent); /* Яркая рамка */
     border-radius: 12px;
     padding: 12px;
     background: rgba(31, 111, 235, 0.1); /* Легкий синий оттенок */
-    border-bottom: 2px solid var(--accent); /* Перебиваем стандартный border */
+    margin-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(31, 111, 235, 0.2);
   }
 
   .rule-block{padding:12px 0; border-bottom:1px solid #21262d;}
@@ -600,9 +590,9 @@
 
     <div class="modal-body">
       
-      <!-- СТИКИ: ЗАКРЕПЛЕННОЕ ПРИЛОЖЕНИЕ 1 -->
-      <div class="sticky-app1">
-        <div class="rule-block" id="r-speed">
+      <!-- ВЫДЕЛЕННОЕ ПРИЛОЖЕНИЕ 1 (ИДЕТ ПЕРВЫМ) -->
+      <div class="app1-highlight">
+        <div class="rule-block" id="r-speed" style="border-bottom: none; padding: 0;">
           <h3>Приложение №1 — скорости вылета и типы оружия</h3>
           <p>Дульная энергия — не более <span class="hl">3 Дж</span>. Скорости указаны при стрельбе шаром 6 мм массой <span class="hl">0,43 г</span>, с настроенным хоп-апом. Погрешность измерения — <span class="hl">+5 м/с</span>.</p>
           <table class="speed-table">
