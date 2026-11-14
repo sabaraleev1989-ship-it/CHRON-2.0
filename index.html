@@ -113,18 +113,7 @@
   .qw:hover{border-color:var(--accent);}
   .qw.active{border-color:var(--accent); background:#1f6feb1a; color:var(--accent);}
 
-  .weapons{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
-  .weapon{
-    background:#0a0d12; border:1px solid var(--line);
-    border-radius:10px; padding:10px; text-align:left;
-    color:var(--txt); font-size:13px; cursor:pointer;
-    transition:border-color .12s, background .12s, transform .08s;
-  }
-  .weapon:active{transform:scale(.97);}
-  .weapon .limit{display:block; font-size:11px; color:var(--dim); margin-top:3px;}
-  .weapon.active{border-color:var(--accent); background:#1f6feb1a;}
-  .weapon.active .limit{color:var(--accent);}
-
+  /* ---------- Режим площадки ---------- */
   .modes{display:flex; gap:8px;}
   .mode{
     flex:1; padding:10px; border-radius:10px; text-align:center;
@@ -147,7 +136,6 @@
   .speed-input::-webkit-outer-spin-button,
   .speed-input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .speed-input:focus{border-color:var(--accent); box-shadow:0 0 0 3px #1f6feb33;}
-  /* увеличение цифр в точном режиме */
   .speed-input.fine{
     transform:scale(1.06);
     color:var(--accent);
@@ -161,6 +149,7 @@
   }
   .speed-fine-badge.on{opacity:1;}
 
+  /* ---------- Результат ---------- */
   .result{
     border-radius:14px; padding:16px; border:1px solid var(--line);
     background:var(--panel);
@@ -175,6 +164,31 @@
   .result .status{font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;}
   .result .big{font-size:40px; font-weight:800; margin:4px 0;}
   .result .note{font-size:12px; margin-top:8px; line-height:1.4;}
+  .result .weapon-info{
+    margin-top:12px; padding-top:12px;
+    border-top:1px solid #21262d;
+    font-size:12.5px; line-height:1.5;
+  }
+  .result .weapon-info .wi-title{
+    font-size:10px; text-transform:uppercase; letter-spacing:.7px;
+    color:var(--dim); font-weight:600; margin-bottom:6px;
+  }
+  .result .weapon-info .wi-line{
+    display:flex; justify-content:space-between; gap:8px;
+    padding:4px 0;
+  }
+  .result .weapon-info .wi-line .name{color:#c9d1d9;}
+  .result .weapon-info .wi-line .val{color:var(--dim); font-weight:600; white-space:nowrap;}
+  .result .weapon-info .wi-allowed{
+    margin-top:8px; padding:8px 10px; border-radius:8px;
+    background:#2ea0431a; border:1px solid #2ea04355;
+    color:#7ee787; font-size:12px; font-weight:600;
+  }
+  .result .weapon-info .wi-blocked{
+    margin-top:8px; padding:8px 10px; border-radius:8px;
+    background:#da36331a; border:1px solid #da363355;
+    color:#ff7b72; font-size:12px; font-weight:600;
+  }
   .result.green{border-color:var(--green); background:#2ea04314;}
   .result.green .status{color:var(--green);}
   .result.yellow{border-color:var(--yellow); background:#d2992214;}
@@ -263,7 +277,6 @@
   .footnote{font-size:11px; color:var(--dim); margin-top:10px; line-height:1.5;}
 
   @media (max-width:380px){
-    .weapons{grid-template-columns:1fr;}
     .equiv-grid{grid-template-columns:1fr;}
   }
 </style>
@@ -309,19 +322,6 @@
   </div>
 </section>
 
-<!-- Тип оружия -->
-<section class="panel">
-  <div class="label">Тип оружия</div>
-  <div class="weapons" id="weapons">
-    <button class="weapon active" data-limit="75">Пистолет / револьвер<span class="limit">до 75 м/с (0,43 г)</span></button>
-    <button class="weapon" data-limit="85">Автоматическое (электро/газ)<span class="limit">до 85 м/с (0,43 г)</span></button>
-    <button class="weapon" data-limit="92">LSW (лёгкий пулемёт)<span class="limit">до 92 м/с (0,43 г)</span></button>
-    <button class="weapon" data-limit="98">Пулемёт с лентой (MG)<span class="limit">до 98 м/с (0,43 г)</span></button>
-    <button class="weapon" data-limit="112">Станковый / крупнокалиберный<span class="limit">до 112 м/с (0,43 г)</span></button>
-    <button class="weapon" data-limit="118">Снайперская винтовка<span class="limit">до 118 м/с (0,43 г)</span></button>
-  </div>
-</section>
-
 <!-- Режим площадки -->
 <section class="panel">
   <div class="label">Условия игры</div>
@@ -350,6 +350,11 @@
   <div class="status" id="status">Введите скорость</div>
   <div class="big" id="big">— м/с</div>
   <div class="note" id="note"></div>
+  <div class="weapon-info" id="weaponInfo" style="display:none;">
+    <div class="wi-title">Допуск по типу оружия</div>
+    <div id="wiLines"></div>
+    <div id="wiVerdict"></div>
+  </div>
 </section>
 
 <!-- Эквивалент и энергия -->
@@ -477,10 +482,20 @@
 
 <script>
 /* ================= КОНСТАНТЫ ПРАВИЛ ================= */
-const BASE_WEIGHT = 0.43;
-const TOLERANCE   = 5;
-const CQB_EQ_LIMIT = 120;
+const BASE_WEIGHT = 0.43;          // эталонный вес правил, г
+const TOLERANCE   = 5;             // допуск +5 м/с
+const CQB_EQ_LIMIT = 120;          // п.11.6
 const CQB_EQ_WEIGHT = 0.20;
+
+/* Таблица типов оружия по правилам ЮФО (Приложение №1) */
+const WEAPONS = [
+  { name: 'Пистолет / револьвер',              limit: 75  },
+  { name: 'Автоматическое (электро/газ)',      limit: 85  },
+  { name: 'LSW (лёгкий пулемёт)',              limit: 92  },
+  { name: 'Пулемёт с лентой (MG)',             limit: 98  },
+  { name: 'Станковый / крупнокалиберный',      limit: 112 },
+  { name: 'Снайперская винтовка',              limit: 118 }
+];
 
 /* ================= СЛАЙДЕР ВЕСА ================= */
 const MIN_W = 0.12, MAX_W = 0.50;
@@ -565,7 +580,6 @@ function endDrag(){
 track.addEventListener('pointerup', endDrag);
 track.addEventListener('pointercancel', endDrag);
 
-/* двойной тап — сброс на 0,43 */
 let lastTap = 0;
 track.addEventListener('pointerup', ()=>{
   const now = Date.now();
@@ -577,7 +591,6 @@ track.addEventListener('pointerup', ()=>{
   lastTap = now;
 });
 
-/* быстрые кнопки веса */
 document.getElementById('quickWeights').addEventListener('click', e=>{
   const btn = e.target.closest('.qw');
   if(!btn) return;
@@ -587,17 +600,10 @@ document.getElementById('quickWeights').addEventListener('click', e=>{
 });
 
 /* ================= СЛАЙДЕР СКОРОСТИ ================= */
-/* 
-   Логика:
-   - SPEED_STEP_FINE = 0.1 — точный шаг (всегда, без переключения на целые!)
-   - SPEED_STEP_COARSE = 1 — грубый шаг, только если палец летит очень быстро
-   - при отпускании: Math.floor (отбрасываем дробь, НЕ округляем вверх)
-   - порог точного режима повышен (0.20 px/ms), чтобы ползунок не срывался
-*/
 const SPEED_MIN = 0, SPEED_MAX = 200;
 const SPEED_STEP_FINE = 0.1;
 const SPEED_STEP_COARSE = 1;
-const FINE_THRESHOLD = 0.20;   // было 0.10 — теперь точный режим ловится легче
+const FINE_THRESHOLD = 0.20;
 
 const speedTrack = document.getElementById('speedTrack');
 const speedFill  = document.getElementById('speedFill');
@@ -617,7 +623,6 @@ function renderSpeedSlider(v){
   speedThumb.style.left = p + '%';
 }
 
-/* ощутимая вибрация для скорости */
 function vibrateSpeed(strong){
   const now = performance.now();
   if(now - sLastVibe < 40) return;
@@ -639,18 +644,15 @@ function setSpeedFromEvent(e){
   const pxPerMs = dx / dt;
   sLastX = e.clientX; sLastT = now;
 
-  // точный режим ловится легче: порог 0.20 px/ms
   const fine = pxPerMs < FINE_THRESHOLD;
   sFineActive = fine;
   speedFineBadge.classList.toggle('on', fine);
-  speedInput.classList.toggle('fine', fine);   // увеличение цифр
+  speedInput.classList.toggle('fine', fine);
   speedThumb.classList.add('active');
 
-  // в точном режиме — всегда шаг 0.1, и НЕ срываемся на целые
   const step = fine ? SPEED_STEP_FINE : SPEED_STEP_COARSE;
   let v = Math.round(raw / step) * step;
   v = Math.min(Math.max(v, SPEED_MIN), SPEED_MAX);
-  // сохраняем 0.1 только в точном режиме, иначе целое
   v = fine ? Math.round(v * 10) / 10 : Math.round(v);
 
   if(parseFloat(speedInput.value) !== v){
@@ -676,10 +678,9 @@ function endSpeedDrag(){
   speedInput.classList.remove('fine');
   sFineActive = false;
 
-  // при отпускании — отбрасываем дробную часть, НЕ округляем вверх
   const cur = parseFloat(speedInput.value);
   if(!isNaN(cur)){
-    const floored = Math.floor(cur);   // 88.1 → 88, 88.6 → 88, 88.9 → 88
+    const floored = Math.floor(cur);
     speedInput.value = floored;
     renderSpeedSlider(floored);
     updateAll();
@@ -692,20 +693,6 @@ speedTrack.addEventListener('pointercancel', endSpeedDrag);
 speedInput.addEventListener('input', ()=>{
   const v = parseFloat(speedInput.value);
   if(!isNaN(v)) renderSpeedSlider(v);
-  updateAll();
-});
-
-/* ================= ВЫБОР ОРУЖИЯ ================= */
-let weaponLimit = 75;
-let weaponName  = 'Пистолет / револьвер';
-document.getElementById('weapons').addEventListener('click', e=>{
-  const btn = e.target.closest('.weapon');
-  if(!btn) return;
-  document.querySelectorAll('.weapon').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  weaponLimit = parseFloat(btn.dataset.limit);
-  weaponName  = btn.childNodes[0].textContent.trim();
-  if(navigator.vibrate) navigator.vibrate(8);
   updateAll();
 });
 
@@ -730,6 +717,9 @@ const eqVal    = document.getElementById('eqVal');
 const eqSub    = document.getElementById('eqSub');
 const energyVal= document.getElementById('energyVal');
 const energySub= document.getElementById('energySub');
+const weaponInfo = document.getElementById('weaponInfo');
+const wiLines = document.getElementById('wiLines');
+const wiVerdict = document.getElementById('wiVerdict');
 
 let lastClass = '';
 
@@ -762,43 +752,96 @@ function updateAll(){
     statusEl.textContent = 'Введите скорость';
     bigEl.textContent = '— м/с';
     noteEl.textContent = '';
+    weaponInfo.style.display = 'none';
     lastClass = '';
     return;
   }
 
+  /* Эквивалент при эталонном весе 0,43 г — для сравнения с таблицей */
   const vEq = v * Math.sqrt(weight / BASE_WEIGHT);
 
-  let limit = weaponLimit;
-  let limitReason = weaponName;
-  let cmpValue = vEq;
-  let useCqb = false;
-
+  /* === Режим CQB === */
   if(mode === 'cqb'){
     const vEq020 = v * Math.sqrt(weight / CQB_EQ_WEIGHT);
-    limit = CQB_EQ_LIMIT;
-    limitReason = 'Здание / CQB (п. 11.6)';
-    cmpValue = vEq020;
-    useCqb = true;
+    const cqbLimit = CQB_EQ_LIMIT;
+    const cqbYellow = cqbLimit + TOLERANCE;
+    let cls, st, nt;
+
+    if(vEq020 <= cqbLimit){
+      cls='green'; st='ДОПУСК'; nt = `В пределах лимита для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с).`;
+    } else if(vEq020 <= cqbYellow){
+      cls='yellow'; st='НА ГРАНИЦЕ'; nt = `В пределах допуска +${TOLERANCE} м/с для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с).`;
+    } else {
+      cls='red'; st='НАРУШЕНИЕ'; nt = `Превышен лимит для зданий (эквивалент 0,20 г: до ${cqbLimit} м/с). К использованию не допускается.`;
+    }
+
+    bigEl.textContent = v.toFixed(1) + ' м/с';
+    setResultClass(cls);
+    statusEl.textContent = st;
+    noteEl.textContent = nt;
+
+    // в CQB показываем только вердикт по эквиваленту 0,20 г
+    weaponInfo.style.display = 'block';
+    wiLines.innerHTML = `
+      <div class="wi-line"><span class="name">Эквивалент 0,20 г</span><span class="val">${vEq020.toFixed(1)} м/с</span></div>
+      <div class="wi-line"><span class="name">Лимит CQB (п.11.6)</span><span class="val">до ${cqbLimit} м/с</span></div>
+    `;
+    wiVerdict.className = vEq020 <= cqbLimit ? 'wi-allowed' : 'wi-blocked';
+    wiVerdict.textContent = vEq020 <= cqbLimit
+      ? '✓ Разрешено в здании / CQB'
+      : '✗ Запрещено в здании / CQB';
+    return;
   }
 
+  /* === Открытая площадка: подбор оружия по таблице === */
   bigEl.textContent = v.toFixed(1) + ' м/с';
 
-  const yellowMax = limit + TOLERANCE;
-  let cls, st, nt;
+  const allowed = [];
+  const blocked = [];
+  WEAPONS.forEach(w=>{
+    if(vEq <= w.limit + TOLERANCE) allowed.push(w);
+    else blocked.push(w);
+  });
 
-  if(cmpValue <= limit){
-    cls='green'; st='ДОПУСК';
-    nt = useCqb
-      ? `В пределах лимита CQB (эквивалент 0,20 г: до ${limit} м/с).`
-      : `В пределах лимита (${limitReason}: до ${limit} м/с при 0,43 г).`;
-  } else if(cmpValue <= yellowMax){
-    cls='yellow'; st='НА ГРАНИЦЕ';
-    nt = `В пределах допуска +${TOLERANCE} м/с (${limitReason}: до ${limit} м/с).`;
+  // общий статус: зелёный, если подходит хоть пистолет;
+  // красный, если не подходит ничего
+  let cls, st, nt;
+  if(allowed.length === WEAPONS.length){
+    cls='green'; st='ДОПУСК'; nt = `Подходит для любого типа оружия (эквивалент 0,43 г: ${vEq.toFixed(1)} м/с).`;
+  } else if(allowed.length > 0){
+    cls='yellow'; st='ОГРАНИЧЕНИЕ'; nt = `Подходит не для всех типов. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с.`;
   } else {
-    cls='red'; st='НАРУШЕНИЕ';
-    nt = `Превышен лимит (${limitReason}: до ${limit} м/с). К использованию не допускается.`;
+    cls='red'; st='НАРУШЕНИЕ'; nt = `Превышены все лимиты. Эквивалент 0,43 г: ${vEq.toFixed(1)} м/с. К использованию не допускается.`;
   }
 
+  setResultClass(cls);
+  statusEl.textContent = st;
+  noteEl.textContent = nt;
+
+  // список типов оружия с лимитами
+  weaponInfo.style.display = 'block';
+  wiLines.innerHTML = WEAPONS.map(w=>{
+    const ok = vEq <= w.limit + TOLERANCE;
+    const mark = ok ? '✓' : '✗';
+    const color = ok ? '#7ee787' : '#ff7b72';
+    return `<div class="wi-line">
+      <span class="name" style="color:${color}">${mark} ${w.name}</span>
+      <span class="val">до ${w.limit}</span>
+    </div>`;
+  }).join('');
+
+  // итоговый вердикт
+  if(allowed.length === 0){
+    wiVerdict.className = 'wi-blocked';
+    wiVerdict.textContent = '✗ Не подходит ни под один тип — к использованию не допускается';
+  } else {
+    wiVerdict.className = 'wi-allowed';
+    const names = allowed.map(w=>w.name).join(', ');
+    wiVerdict.textContent = `✓ Можно использовать как: ${names}`;
+  }
+}
+
+function setResultClass(cls){
   const full = 'result ' + cls;
   if(full !== lastClass){
     resultEl.className = full;
@@ -808,9 +851,6 @@ function updateAll(){
     if(navigator.vibrate) navigator.vibrate(cls==='red'?[15,40,15]:10);
     lastClass = full;
   }
-
-  statusEl.textContent = st;
-  noteEl.textContent = nt;
 }
 
 /* ================= МОДАЛЬНОЕ ОКНО ПРАВИЛ ================= */
