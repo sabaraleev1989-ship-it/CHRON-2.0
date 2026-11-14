@@ -6,11 +6,13 @@
 <meta name="theme-color" content="#0e1116">
 <title>Хронограф 2.0 — СК Скорпион</title>
 
-<!-- PWA Манифест (встроен для удобства, но лучше вынести в отдельный manifest.json) -->
 <link rel="manifest" href='data:application/manifest+json,{"name":"Хронограф 2.0","short_name":"Хронограф","start_url":".","display":"standalone","background_color":"%230e1116","theme_color":"%230e1116","icons":[{"src":"23.png","sizes":"192x192","type":"image/png"},{"src":"23.png","sizes":"512x512","type":"image/png"}]}'>
 <link rel="apple-touch-icon" href="23.png">
 
 <style>
+  /* Добавляем боевой шрифт */
+  @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Share+Tech+Mono&display=swap');
+
   :root{
     --bg:#0e1116; --panel:rgba(22, 27, 34, 0.85); --line:#2a313c;
     --txt:#e6edf3; --dim:#8b949e;
@@ -36,18 +38,17 @@
     gap:14px; user-select:none;
     -webkit-overflow-scrolling: touch;
     
-    /* ФОН ПРИЛОЖЕНИЯ */
-    background-image: url('32.png');
+    /* ФОН ПРИЛОЖЕНИЯ ИЗМЕНЕН НА 34.PNG */
+    background-image: url('34.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
 
-  /* Затемняющий слой поверх фона, чтобы текст читался */
   body::before {
     content: ''; position: fixed; inset: 0;
-    background: rgba(14, 17, 22, 0.85); /* Прозрачность 85% */
+    background: rgba(14, 17, 22, 0.85); 
     z-index: -1;
   }
 
@@ -59,7 +60,8 @@
     background-size: cover;
     background-position: center;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    align-items: center; justify-content: flex-end; /* Текст прижат к низу */
+    padding-bottom: max(40px, env(safe-area-inset-bottom)); /* Отступ снизу */
     transition: opacity 0.8s ease, visibility 0.8s ease;
   }
   
@@ -68,61 +70,52 @@
     visibility: hidden;
   }
 
-  /* Затемнение на заставке для читаемости */
   #splash-screen::before {
     content: ''; position: absolute; inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.4); /* Легкое затемнение */
   }
 
   .splash-content {
     position: relative; z-index: 2;
-    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    width: 100%; padding: 0 20px; gap: 8px;
   }
 
-  .splash-logo {
-    width: 90px; height: 90px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 20px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 48px; font-weight: 800; color: #fff;
-    box-shadow: 0 10px 30px rgba(31, 111, 235, 0.4);
-    animation: pulse-logo 2s infinite alternate;
-  }
-
-  @keyframes pulse-logo {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.05); }
-  }
-
+  /* Название команды внизу и поменьше */
   .splash-title {
-    font-size: 24px; font-weight: 800; letter-spacing: 1px;
-    color: #fff; margin-top: 10px;
+    font-size: 14px; font-weight: 700; letter-spacing: 2px;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px #000;
   }
 
-  /* Анимация текста "ЗАГРУЗКА" по буквам */
+  /* Боевой антуражный текст */
   .splash-loading {
-    font-size: 14px; font-weight: 700; letter-spacing: 4px;
-    color: var(--accent2); margin-top: 10px;
+    font-family: 'Share Tech Mono', monospace; /* Шрифт как у терминала/маркировки */
+    font-size: 18px; font-weight: 700; letter-spacing: 6px;
+    color: #e6edf3; margin-top: 10px;
     display: flex; gap: 2px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(31, 111, 235, 0.8);
   }
+  
   .splash-loading span {
     opacity: 0;
     animation: fade-letter 3s infinite;
   }
   
-  /* Задержки для каждой буквы */
-  .splash-loading span:nth-child(1) { animation-delay: 0.2s; }
-  .splash-loading span:nth-child(2) { animation-delay: 0.4s; }
-  .splash-loading span:nth-child(3) { animation-delay: 0.6s; }
-  .splash-loading span:nth-child(4) { animation-delay: 0.8s; }
-  .splash-loading span:nth-child(5) { animation-delay: 1.0s; }
-  .splash-loading span:nth-child(6) { animation-delay: 1.2s; }
-  .splash-loading span:nth-child(7) { animation-delay: 1.4s; }
-  .splash-loading span:nth-child(8) { animation-delay: 1.6s; }
+  /* Антуражная задержка появления букв (как в военных рациях) */
+  .splash-loading span:nth-child(1) { animation-delay: 0.1s; }
+  .splash-loading span:nth-child(2) { animation-delay: 0.3s; }
+  .splash-loading span:nth-child(3) { animation-delay: 0.5s; }
+  .splash-loading span:nth-child(4) { animation-delay: 0.7s; }
+  .splash-loading span:nth-child(5) { animation-delay: 0.9s; }
+  .splash-loading span:nth-child(6) { animation-delay: 1.1s; }
+  .splash-loading span:nth-child(7) { animation-delay: 1.3s; }
+  .splash-loading span:nth-child(8) { animation-delay: 1.5s; }
 
   @keyframes fade-letter {
-    0%, 100% { opacity: 0; transform: translateY(5px); }
-    20%, 80% { opacity: 1; transform: translateY(0); }
+    0%, 100% { opacity: 0.1; transform: scale(0.9); }
+    20%, 80% { opacity: 1; transform: scale(1.1); text-shadow: 0 0 15px #fff; }
   }
 
   /* ================= ОСНОВНОЙ ИНТЕРФЕЙС ================= */
@@ -156,7 +149,7 @@
     border-radius:16px; padding:14px;
     box-shadow:0 6px 24px #0006;
     flex-shrink: 0;
-    backdrop-filter: blur(10px); /* Размытие фона под панелями */
+    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
   .panel.accent{
@@ -460,11 +453,12 @@
 <!-- ================= ЗАСТАВКА ================= -->
 <div id="splash-screen">
   <div class="splash-content">
-    <div class="splash-logo">С</div>
-    <div class="splash-title">СК «Скорпион»</div>
+    <!-- Антуражный текст загрузки -->
     <div class="splash-loading">
       <span>З</span><span>А</span><span>Г</span><span>Р</span><span>У</span><span>З</span><span>К</span><span>А</span>
     </div>
+    <!-- Название команды снизу и маленькое -->
+    <div class="splash-title">СК «Скорпион»</div>
   </div>
 </div>
 
@@ -569,7 +563,6 @@
       <button class="modal-close" id="closeRules">✕</button>
     </div>
     
-    <!-- Быстрая навигация по важным пунктам -->
     <div class="rules-nav">
       <a href="#r-speed">Скорости (Прил. 1)</a>
       <a href="#r-pyro">Пиротехника и Гранаты</a>
@@ -647,12 +640,10 @@
 <script>
 /* ================= ЗАСТАВКА ================= */
 window.addEventListener('load', () => {
-  // Ждем 5 секунд и скрываем заставку
   setTimeout(() => {
     const splash = document.getElementById('splash-screen');
     if(splash) {
       splash.classList.add('hidden');
-      // Удаляем из DOM через 1 секунду, чтобы не мешала нажатиям
       setTimeout(() => splash.remove(), 1000);
     }
   }, 5000);
