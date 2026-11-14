@@ -17,10 +17,11 @@
     background:var(--bg); color:var(--txt);
     min-height:100vh; display:flex; flex-direction:column;
     padding:14px; gap:14px; user-select:none;
+    overflow-x:hidden;
   }
 
   /* ---------- Шапка ---------- */
-  header{display:flex; align-items:center; justify-content:space-between;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:10px;}
   .logo{display:flex; align-items:center; gap:8px;}
   .logo-mark{
     width:30px;height:30px;border-radius:8px;background:var(--accent);
@@ -29,6 +30,17 @@
   }
   .logo-text{font-weight:700;font-size:15px;letter-spacing:.3px;}
   .logo-sub{font-size:11px;color:var(--dim);}
+  .header-right{display:flex; align-items:center; gap:8px;}
+  .rules-btn{
+    background:#0a0d12; border:1px solid var(--line);
+    border-radius:10px; padding:8px 10px; color:var(--txt);
+    font-size:11px; font-weight:600; cursor:pointer;
+    transition:border-color .12s, background .12s, transform .08s;
+    display:flex; align-items:center; gap:5px;
+  }
+  .rules-btn:active{transform:scale(.95);}
+  .rules-btn:hover{border-color:var(--accent);}
+  .rules-btn .ico{font-size:13px;}
   .ver{font-size:11px;color:var(--dim);}
 
   /* ---------- Панели ---------- */
@@ -44,8 +56,17 @@
   /* ---------- Слайдер веса ---------- */
   .weight-value{
     display:flex; align-items:baseline; gap:6px; margin-bottom:12px;
+    height:42px;
   }
-  .weight-value b{font-size:30px; font-weight:800;}
+  .weight-value b{
+    font-size:30px; font-weight:800;
+    transition:transform .12s ease, color .12s ease;
+    display:inline-block;
+  }
+  .weight-value.big b{
+    transform:scale(1.35);
+    color:var(--accent);
+  }
   .weight-value span{font-size:14px; color:var(--dim);}
 
   .slider-track{
@@ -57,12 +78,18 @@
     position:absolute; top:0; left:0; bottom:0;
     background:linear-gradient(90deg,#1f6feb55,#1f6feb99);
     width:0%; pointer-events:none;
+    transition:width .05s linear;
   }
   .slider-thumb{
     position:absolute; top:50%; transform:translate(-50%,-50%);
     width:26px; height:26px; border-radius:50%;
     background:#fff; box-shadow:0 0 0 3px #1f6feb, 0 2px 8px #000a;
     pointer-events:none;
+    transition:left .05s linear, width .12s ease, height .12s ease, box-shadow .12s ease;
+  }
+  .slider-thumb.active{
+    width:34px; height:34px;
+    box-shadow:0 0 0 4px #1f6feb, 0 0 18px #1f6feb99;
   }
   .slider-marks{
     display:flex; justify-content:space-between;
@@ -80,8 +107,9 @@
     background:#0a0d12; border:1px solid var(--line);
     border-radius:10px; padding:10px; text-align:left;
     color:var(--txt); font-size:13px; cursor:pointer;
-    transition:border-color .12s, background .12s;
+    transition:border-color .12s, background .12s, transform .08s;
   }
+  .weapon:active{transform:scale(.97);}
   .weapon .limit{display:block; font-size:11px; color:var(--dim); margin-top:3px;}
   .weapon.active{border-color:var(--accent); background:#1f6feb1a;}
   .weapon.active .limit{color:var(--accent);}
@@ -92,8 +120,9 @@
     flex:1; padding:10px; border-radius:10px; text-align:center;
     background:#0a0d12; border:1px solid var(--line);
     color:var(--txt); font-size:13px; cursor:pointer;
-    transition:border-color .12s, background .12s;
+    transition:border-color .12s, background .12s, transform .08s;
   }
+  .mode:active{transform:scale(.97);}
   .mode.active{border-color:var(--accent); background:#1f6feb1a; font-weight:600;}
 
   /* ---------- Ввод скорости ---------- */
@@ -103,16 +132,24 @@
     border-radius:12px; padding:14px; font-size:34px; font-weight:800;
     color:var(--txt); text-align:center; width:100%;
     outline:none; -moz-appearance:textfield;
+    transition:border-color .15s, box-shadow .15s;
   }
   .speed-input::-webkit-outer-spin-button,
   .speed-input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
-  .speed-input:focus{border-color:var(--accent);}
+  .speed-input:focus{border-color:var(--accent); box-shadow:0 0 0 3px #1f6feb33;}
   .speed-unit{font-size:15px; color:var(--dim); font-weight:600;}
 
   /* ---------- Результат ---------- */
   .result{
     border-radius:14px; padding:16px; border:1px solid var(--line);
-    background:var(--panel); transition:border-color .2s, background .2s;
+    background:var(--panel);
+    transition:border-color .2s, background .2s, transform .15s;
+  }
+  .result.pulse{animation:pulse .35s ease;}
+  @keyframes pulse{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.015);}
+    100%{transform:scale(1);}
   }
   .result .status{font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;}
   .result .big{font-size:40px; font-weight:800; margin:4px 0;}
@@ -131,6 +168,66 @@
     color:var(--dim); line-height:1.5; padding-top:6px;
   }
   footer b{color:var(--txt);}
+
+  /* ---------- Модальное окно правил ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:#000c;
+    display:none; align-items:flex-end; justify-content:center;
+    z-index:100; opacity:0; transition:opacity .2s;
+  }
+  .modal-overlay.open{display:flex; opacity:1;}
+  .modal{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:18px 18px 0 0; width:100%; max-width:600px;
+    max-height:88vh; display:flex; flex-direction:column;
+    transform:translateY(30px); transition:transform .25s ease;
+  }
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px; border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .modal-title{font-size:15px; font-weight:700;}
+  .modal-close{
+    width:32px; height:32px; border-radius:8px;
+    background:#0a0d12; border:1px solid var(--line);
+    color:var(--txt); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .12s;
+  }
+  .modal-close:active{background:#1f6feb33;}
+  .modal-body{
+    overflow-y:auto; padding:14px 16px 20px;
+    -webkit-overflow-scrolling:touch;
+    font-size:13px; line-height:1.5;
+  }
+  .rule-block{
+    padding:10px 0; border-bottom:1px solid #21262d;
+  }
+  .rule-block:last-child{border-bottom:none;}
+  .rule-block h3{
+    margin:0 0 4px; font-size:13px; font-weight:700;
+    color:var(--accent);
+  }
+  .rule-block p{margin:0; color:#c9d1d9; font-size:12.5px;}
+  .rule-block .sub{
+    display:block; margin-top:5px; padding-left:10px;
+    border-left:2px solid #30363d; color:var(--dim); font-size:12px;
+  }
+  .speed-table{
+    width:100%; border-collapse:collapse; margin-top:6px; font-size:12px;
+  }
+  .speed-table th, .speed-table td{
+    padding:5px 6px; text-align:left; border-bottom:1px solid #21262d;
+  }
+  .speed-table th{color:var(--dim); font-weight:600;}
+  .speed-table td b{color:var(--txt);}
+  .footnote{font-size:11px; color:var(--dim); margin-top:10px; line-height:1.5;}
+
+  @media (max-width:380px){
+    .weapons{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -143,34 +240,40 @@
       <div class="logo-sub">СК «Скорпион»</div>
     </div>
   </div>
-  <div class="ver">v2.0</div>
+  <div class="header-right">
+    <button class="rules-btn" id="openRules">
+      <span class="ico">📖</span> Правила ЮФО
+    </button>
+    <div class="ver">v2.0</div>
+  </div>
 </header>
 
 <!-- Вес шара -->
 <section class="panel">
   <div class="label">Вес шара</div>
-  <div class="weight-value">
-    <b id="weightOut">0.20</b><span>г</span>
+  <div class="weight-value" id="weightWrap">
+    <b id="weightOut">0.43</b><span>г</span>
   </div>
   <div class="slider-track" id="track">
     <div class="slider-fill" id="fill"></div>
     <div class="slider-thumb" id="thumb"></div>
   </div>
   <div class="slider-marks">
-    <span>0.12</span><span>0.20</span><span>0.30</span><span>0.40</span><span>0.50</span>
+    <span>0.20</span><span>0.30</span><span>0.43</span>
   </div>
-  <div class="fine-badge" id="fineBadge">Точная настройка · шаг 0.001 г</div>
+  <div class="fine-badge" id="fineBadge">Точный выбор</div>
 </section>
 
 <!-- Тип оружия -->
 <section class="panel">
   <div class="label">Тип оружия</div>
   <div class="weapons" id="weapons">
-    <button class="weapon active" data-limit="100">Пистолет / револьвер<span class="limit">до 100 м/с</span></button>
-    <button class="weapon" data-limit="120">Пистолет-пулемёт<span class="limit">до 120 м/с</span></button>
-    <button class="weapon" data-limit="130">Автомат / штурмовая<span class="limit">до 130 м/с</span></button>
-    <button class="weapon" data-limit="130">Помповое ружьё<span class="limit">до 130 м/с</span></button>
-    <button class="weapon" data-limit="172">Снайперская винтовка<span class="limit">до 172 м/с</span></button>
+    <button class="weapon active" data-limit="75">Пистолет / револьвер<span class="limit">до 75 м/с (0,43 г)</span></button>
+    <button class="weapon" data-limit="85">Автоматическое (электро/газ)<span class="limit">до 85 м/с (0,43 г)</span></button>
+    <button class="weapon" data-limit="92">LSW (лёгкий пулемёт)<span class="limit">до 92 м/с (0,43 г)</span></button>
+    <button class="weapon" data-limit="98">Пулемёт с лентой (MG)<span class="limit">до 98 м/с (0,43 г)</span></button>
+    <button class="weapon" data-limit="112">Станковый / крупнокалиберный<span class="limit">до 112 м/с (0,43 г)</span></button>
+    <button class="weapon" data-limit="118">Снайперская винтовка<span class="limit">до 118 м/с (0,43 г)</span></button>
   </div>
 </section>
 
@@ -202,27 +305,135 @@
 
 <footer>
   Приложение принадлежит <b>СК «Скорпион»</b><br>
-  Правила: СК ЮФО · база 0,20 г · допуск +5 м/с
+  Правила: СК ЮФО 2026 · база 0,43 г · допуск +5 м/с
 </footer>
+
+<!-- ===== МОДАЛЬНОЕ ОКНО ПРАВИЛ ===== -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Правила СК ЮФО 2026 — кратко</div>
+      <button class="modal-close" id="closeRules">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="rule-block">
+        <h3>1. Общие положения</h3>
+        <p>Страйкбол — некоммерческая командная военно-спортивная игра. Участники — граждане 18+, имеющие своё оружие и экипировку и согласные с правилами. Команда — 5+ человек в единообразной форме. Запрещена символика сторон текущих конфликтов на территории бывшего СССР.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>2. Цель и ход игры</h3>
+        <p>Игра по заранее согласованному сценарию на открытой территории. Жилой лагерь обносится белой лентой и не является игровой территорией. Игра ведётся на честность — споры во время игры не допускаются, заспорившие выбывают до конца игры. Посредники контролируют соблюдение правил, их решения обязательны.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>3. Игровое оружие</h3>
+        <p>Допускается пневматика промышленного изготовления под шары 6 мм и 8 мм. Пиротехника — только сертифицированная, на базе петард до «Корсар № 6». Поражающий элемент гранат — шары до 0,20 г или цельный горох. Запрещены парафиновые гранаты, сигнальные ракеты, маркирующие выстрелы для подствольников. Ночью — только трассерные шары.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>4. Снаряжение и экипировка</h3>
+        <p>Снаряжение в стиле «милитари», внешняя схожесть игроков одной команды обязательна. Запрещено снаряжение, массово использовавшееся в армиях ранее 1953 года и позднее реального времени. Защита глаз, выдерживающая выстрел шаром 172 м/с (0,2 г) в упор — обязательна.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>5. Фортификационные сооружения</h3>
+        <p>Разрешены окопы, траншеи, бункеры, мешки с грунтом, конструкции толщиной от 3 мм (металл) / 1 см (дерево). Запрещены ловушки, колючая проволока на подступах, крыши из веток/фанеры/ДСП. В любом сооружении должен быть минимум один свободный вход/выход. Палатки-штабы приравнены к зданиям.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>6. Техника</h3>
+        <p>Техника должна соответствовать военному прототипу или быть стилизована под «милитари». Скорость движения по полигону — не более 20 км/ч, при движении вперёд — один гудок, назад — два. Поражение техники — двумя попаданиями пиротехники (первое обездвиживает на 30 мин, второе уничтожает). БПЛА — только по согласованию, экипаж 2 человека, атаковать игроков нельзя.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>7. «Убитые»</h3>
+        <p>«Убит» — попавшим хотя бы одним шаром в любую часть тела или снаряжения (рикошет и попадание в оружие не считаются). Граната — радиус 3 м или прямое попадание поражающего элемента. Днём — красная повязка, ночью — мигающий фонарь (кроме белого). Обязан немедленно идти в мертвяк, отсоединив магазин, соблюдать радиомолчание. Стробоскопы запрещены.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>8. Пленные</h3>
+        <p>Пленение — касание плеча/спины с объявлением. Пленный отвечает только «да», «нет», «не знаю», максимум на 3 вопроса, после чего считается «убитым». Время плена — не более 1 часа. Оружие не изымается, но применять его до входа в игру нельзя.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>9. Некомбатанты</h3>
+        <p>Жёны, дети, операторы, посредники, повара, местные жители. Носят красную повязку на голове, шее или руке. Конфликты с туристами и местными силовыми методами не допускаются.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>10. Корреспонденты</h3>
+        <p>Подчиняются правилам страйкбола. По решению организаторов могут быть допущены как некомбатанты: красная куртка и головной убор, не разговаривать с игроками, не приближаться ближе 10 м, не находиться между играющими и внутри укреплений. Претензии по попаданиям не рассматриваются.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>11. Ограничения</h3>
+        <p>Запрещено: брать/отбрасывать инициированную пиротехнику, стрелять по носящим красную повязку и гражданским, играть в состоянии опьянения, трогать чужое оружие без разрешения, стрельба «по-сомалийски», активная радиоборьба, лазеры видимого диапазона (ЛЦУ, лазерные фары). «Режим тишины» в лагере с 24:00 до 06:00.</p>
+        <span class="sub"><b>п. 11.6 (здания/CQB):</b> в замкнутых пространствах и при выстрелах на очень коротких дистанциях запрещено оружие с энергией выше эквивалента шара 0,2 г на скорости 120 м/с.</span>
+      </div>
+
+      <div class="rule-block">
+        <h3>12. Ответственность</h3>
+        <p>Нарушитель подвергается санкциям вплоть до публичного изгнания. За нарушение игрока несёт ответственность и вся его команда.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>13. Дополнения</h3>
+        <p>Организатор вправе вносить дополнения, если они не противоречат смыслу правил и закону. Об изменениях необходимо оповестить участников не позднее чем за 1 месяц до игры.</p>
+      </div>
+
+      <div class="rule-block">
+        <h3>Приложение №1 — скорости вылета</h3>
+        <p>Дульная энергия — не более 3 Дж. Скорости указаны при стрельбе шаром 6 мм массой <b>0,43 г</b>, с настроенным хоп-апом. Погрешность измерения — <b>+5 м/с</b>.</p>
+        <table class="speed-table">
+          <tr><th>Тип оружия</th><th>Лимит, м/с</th></tr>
+          <tr><td>Пистолеты и револьверы</td><td><b>75</b></td></tr>
+          <tr><td>Электро/газовое автоматическое</td><td><b>85</b></td></tr>
+          <tr><td>LSW (лёгкие пулемёты без ленты)</td><td><b>92</b></td></tr>
+          <tr><td>Пулемёты с ленточным питанием (MG)</td><td><b>98</b></td></tr>
+          <tr><td>Станковые и крупнокалиберные</td><td><b>112</b></td></tr>
+          <tr><td>Снайперское оружие (одиночная стрельба)</td><td><b>118</b></td></tr>
+        </table>
+        <span class="sub"><b>Важно:</b> ВСС (Винторез) снайперской винтовкой не считается. Для ручного оружия — только механические магазины до 150 шаров. РПК-16 признаётся LSW только при удлинении ствола до 580 мм, установке сошек и соответствующих изменений. ВВД-системы замеряются 0,43 г (или рабочим шаром тяжелее) и пломбируются.</span>
+      </div>
+
+      <div class="rule-block">
+        <h3>Приложение №2 — Совет Командиров</h3>
+        <p>Высший орган — Совет Командиров (СК ЮФО). В него входят командиры команд, принявших правила 05.01.2008, и принятые позже. Условия принятия: участие команды в 3 общих играх за 2 сезона + голосование. Исключение: прекращение команды, неучастие в 4 общих играх за 2 сезона, неявка на ежегодный сбор, пропуск более 40% онлайн-голосований. Меры наказания: предупреждение, отстранение на 2/4/6 месяцев, исключение из СК, лишение права поручительства на сезон.</p>
+        <span class="sub">Команды-не члены СК участвуют через поручителя (не более 3 команд на игру) или из «белого списка». Нарушители из «белого списка» — исключение из списка + предупреждение; не из списка — «чёрный список» + предупреждение. Команды из «чёрного списка» к играм СК ЮФО не допускаются. Претензии принимаются в течение месяца после игры и только с фото/видеофиксацией.</span>
+      </div>
+
+      <div class="footnote">
+        Источник: Правила СК ЮФО 2026, опубликованные в сообществе «Новости СК ЮФО». Полный текст — по ссылке в источнике. Приложение носит справочный характер; юридическую силу имеет оригинал правил.
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <script>
 /* ================= КОНСТАНТЫ ПРАВИЛ ================= */
-const BASE_WEIGHT = 0.20;   // эталонный вес правил, г
-const TOLERANCE   = 5;      // допуск +5 м/с
-const CQB_LIMIT   = 130;    // потолок для зданий
-const PISTOL_LIMIT= 100;    // пистолеты в здании тоже 100
+const BASE_WEIGHT = 0.43;          // эталонный вес правил, г
+const TOLERANCE   = 5;             // допуск +5 м/с
+const CQB_EQ_LIMIT = 120;          // п.11.6: эквивалент 120 м/с при 0,20 г
+const CQB_EQ_WEIGHT = 0.20;
 
 /* ================= СЛАЙДЕР ВЕСА ================= */
-const MIN_W = 0.12, MAX_W = 0.50;
+const MIN_W = 0.20, MAX_W = 0.43;
+const STEP  = 0.01;
+
 const track = document.getElementById('track');
 const fill  = document.getElementById('fill');
 const thumb = document.getElementById('thumb');
 const weightOut = document.getElementById('weightOut');
+const weightWrap = document.getElementById('weightWrap');
 const fineBadge = document.getElementById('fineBadge');
 
-let weight = 0.20;
+let weight = 0.43;
 let dragging = false;
-let lastX = 0, lastT = 0, lastSpeed = 0;
+let lastX = 0, lastT = 0;
+let lastVibe = 0;
 
 function wToPct(w){ return ((w - MIN_W) / (MAX_W - MIN_W)) * 100; }
 function pctToW(p){ return MIN_W + (p / 100) * (MAX_W - MIN_W); }
@@ -231,10 +442,15 @@ function renderWeight(){
   const p = wToPct(weight);
   fill.style.width = p + '%';
   thumb.style.left = p + '%';
-  weightOut.textContent = weight.toFixed(3).replace(/0+$/,'').replace(/\.$/,'') || '0';
-  // всегда 2 знака минимум для читаемости
-  weightOut.textContent = weight.toFixed(weight < 0.1 ? 3 : 3).replace(/(\.\d\d)0$/,'$1');
+  weightOut.textContent = weight.toFixed(2);
   updateResult();
+}
+
+function vibrate(){
+  const now = performance.now();
+  if(now - lastVibe < 45) return;
+  lastVibe = now;
+  if(navigator.vibrate) navigator.vibrate(8);
 }
 
 function setFromEvent(e){
@@ -242,56 +458,58 @@ function setFromEvent(e){
   const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
   const raw = pctToW((x / rect.width) * 100);
 
-  // определяем скорость движения пальца
   const now = performance.now();
   const dt = Math.max(now - lastT, 1);
   const dx = Math.abs(e.clientX - lastX);
   const pxPerMs = dx / dt;
   lastX = e.clientX; lastT = now;
 
-  // замедление → тонкий шаг
-  const fine = pxPerMs < 0.08;   // медленное движение
+  const fine = pxPerMs < 0.10;
   fineBadge.classList.toggle('on', fine);
+  weightWrap.classList.toggle('big', fine);
 
-  const step = fine ? 0.001 : 0.01;
-  weight = Math.round(raw / step) * step;
-  weight = Math.min(Math.max(weight, MIN_W), MAX_W);
-  weight = Math.round(weight * 1000) / 1000;
+  let w = Math.round(raw / STEP) * STEP;
+  w = Math.min(Math.max(w, MIN_W), MAX_W);
+  w = Math.round(w * 100) / 100;
 
-  renderWeight();
+  if(w !== weight){
+    weight = w;
+    renderWeight();
+    vibrate();
+  }
 }
 
 track.addEventListener('pointerdown', e=>{
   dragging = true;
+  thumb.classList.add('active');
   track.setPointerCapture(e.pointerId);
   lastX = e.clientX; lastT = performance.now();
   setFromEvent(e);
 });
 track.addEventListener('pointermove', e=>{ if(dragging) setFromEvent(e); });
-track.addEventListener('pointerup', e=>{
+function endDrag(){
   dragging = false;
+  thumb.classList.remove('active');
   fineBadge.classList.remove('on');
-});
-track.addEventListener('pointercancel', ()=>{
-  dragging = false;
-  fineBadge.classList.remove('on');
-});
+  weightWrap.classList.remove('big');
+}
+track.addEventListener('pointerup', endDrag);
+track.addEventListener('pointercancel', endDrag);
 
-/* двойной тап — сброс на стандартный вес */
+/* двойной тап — сброс на 0,43 */
 let lastTap = 0;
-track.addEventListener('pointerup', e=>{
+track.addEventListener('pointerup', ()=>{
   const now = Date.now();
   if(now - lastTap < 300){
-    // ближайший стандартный
-    const std = [0.20,0.25,0.30,0.40,0.43];
-    weight = std.reduce((a,b)=> Math.abs(b-weight)<Math.abs(a-weight)?b:a, std[0]);
+    weight = 0.43;
     renderWeight();
+    if(navigator.vibrate) navigator.vibrate([10,40,10]);
   }
   lastTap = now;
 });
 
 /* ================= ВЫБОР ОРУЖИЯ ================= */
-let weaponLimit = 100;
+let weaponLimit = 75;
 let weaponName  = 'Пистолет / револьвер';
 document.getElementById('weapons').addEventListener('click', e=>{
   const btn = e.target.closest('.weapon');
@@ -300,6 +518,7 @@ document.getElementById('weapons').addEventListener('click', e=>{
   btn.classList.add('active');
   weaponLimit = parseFloat(btn.dataset.limit);
   weaponName  = btn.childNodes[0].textContent.trim();
+  if(navigator.vibrate) navigator.vibrate(8);
   updateResult();
 });
 
@@ -311,6 +530,7 @@ document.getElementById('modes').addEventListener('click', e=>{
   document.querySelectorAll('.mode').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   mode = btn.dataset.mode;
+  if(navigator.vibrate) navigator.vibrate(8);
   updateResult();
 });
 
@@ -325,6 +545,8 @@ const bigEl    = document.getElementById('big');
 const equivEl  = document.getElementById('equiv');
 const noteEl   = document.getElementById('note');
 
+let lastClass = '';
+
 function updateResult(){
   const v = parseFloat(speedInput.value);
 
@@ -334,51 +556,91 @@ function updateResult(){
     bigEl.textContent = '— м/с';
     equivEl.textContent = '';
     noteEl.textContent = '';
+    lastClass = '';
     return;
   }
 
-  // Эквивалент скорости при эталонном весе 0,20 г (по энергии)
-  // E = m*v^2/2 → v_eq = v * sqrt(m / m_base)
+  // эквивалент при эталонном весе 0,43 г (по энергии)
   const vEq = v * Math.sqrt(weight / BASE_WEIGHT);
 
-  // Определяем действующий лимит
   let limit = weaponLimit;
   let limitReason = weaponName;
+  let useEq = false;
 
   if(mode === 'cqb'){
-    if(weaponName.startsWith('Пистолет')){
-      limit = PISTOL_LIMIT;
-      limitReason = 'Пистолет в здании';
-    } else {
-      limit = CQB_LIMIT;
-      limitReason = 'Здание / CQB — потолок 130 м/с';
-    }
+    // п.11.6: пересчёт к эквиваленту 120 м/с при 0,20 г
+    // Сначала энергию текущего замера приводим к 0,20 г
+    const vEq020 = v * Math.sqrt(weight / CQB_EQ_WEIGHT);
+    limit = CQB_EQ_LIMIT;
+    limitReason = 'Здание / CQB (п. 11.6)';
+    useEq = true;
+    renderResult(v, vEq, vEq020, limit, limitReason, useEq);
+    return;
   }
 
-  // Сравниваем фактическую скорость с лимитом
-  // (правила привязаны к скорости при 0,20 г, поэтому сравниваем эквивалент)
-  const compare = vEq;
-  const yellowMax = limit + TOLERANCE;
-
-  bigEl.textContent = v.toFixed(1) + ' м/с';
-  equivEl.textContent = weight !== BASE_WEIGHT
-    ? `Эквивалент при 0,20 г: ${vEq.toFixed(1)} м/с`
-    : '';
-
-  if(compare <= limit){
-    resultEl.className = 'result green';
-    statusEl.textContent = 'ДОПУСК';
-    noteEl.textContent = `В пределах лимита (${limitReason}: до ${limit} м/с).`;
-  } else if(compare <= yellowMax){
-    resultEl.className = 'result yellow';
-    statusEl.textContent = 'НА ГРАНИЦЕ';
-    noteEl.textContent = `Превышение в пределах допуска +${TOLERANCE} м/с (${limitReason}: до ${limit} м/с).`;
-  } else {
-    resultEl.className = 'result red';
-    statusEl.textContent = 'НАРУШЕНИЕ';
-    noteEl.textContent = `Превышен лимит (${limitReason}: до ${limit} м/с). К использованию не допускается.`;
-  }
+  renderResult(v, vEq, vEq, limit, limitReason, false);
 }
+
+function renderResult(v, vEq, cmpValue, limit, limitReason, useEq){
+  bigEl.textContent = v.toFixed(1) + ' м/с';
+
+  if(useEq){
+    equivEl.textContent = `Эквивалент при 0,20 г: ${cmpValue.toFixed(1)} м/с`;
+  } else if(Math.abs(weight - BASE_WEIGHT) > 0.001){
+    equivEl.textContent = `Эквивалент при 0,43 г: ${vEq.toFixed(1)} м/с`;
+  } else {
+    equivEl.textContent = '';
+  }
+
+  const yellowMax = limit + TOLERANCE;
+  let cls, st, nt;
+
+  if(cmpValue <= limit){
+    cls='green'; st='ДОПУСК';
+    nt=`В пределах лимита (${limitReason}: до ${limit} м/с).`;
+  } else if(cmpValue <= yellowMax){
+    cls='yellow'; st='НА ГРАНИЦЕ';
+    nt=`В пределах допуска +${TOLERANCE} м/с (${limitReason}: до ${limit} м/с).`;
+  } else {
+    cls='red'; st='НАРУШЕНИЕ';
+    nt=`Превышен лимит (${limitReason}: до ${limit} м/с). К использованию не допускается.`;
+  }
+
+  const full = 'result ' + cls;
+  if(full !== lastClass){
+    resultEl.className = full;
+    resultEl.classList.remove('pulse');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('pulse');
+    if(navigator.vibrate) navigator.vibrate(cls==='red'?[15,40,15]:10);
+    lastClass = full;
+  }
+
+  statusEl.textContent = st;
+  noteEl.textContent = nt;
+}
+
+/* ================= МОДАЛЬНОЕ ОКНО ПРАВИЛ ================= */
+const modal = document.getElementById('rulesModal');
+const openBtn = document.getElementById('openRules');
+const closeBtn = document.getElementById('closeRules');
+
+function openRules(){
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRules(){
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+openBtn.addEventListener('click', openRules);
+closeBtn.addEventListener('click', closeRules);
+modal.addEventListener('click', e=>{
+  if(e.target === modal) closeRules();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && modal.classList.contains('open')) closeRules();
+});
 
 /* ================= ИНИЦИАЛИЗАЦИЯ ================= */
 renderWeight();
